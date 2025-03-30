@@ -73,27 +73,51 @@ st.markdown("""
     .api-section {
         margin-bottom: 20px;
     }
+    .sidebar-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding: 20px;
+        width: 100%;
+    }
 </style>
 """, unsafe_allow_html=True)
-
-# 타이틀
-st.title("FASHION TREND-SETTER")
-st.markdown("### 패션 트렌드/용어")
-
-# API 키 입력 섹션 (왼쪽 상단)
-with st.expander("API 키 설정"):
-    openai_key = st.text_input("OpenAI API 키", value=st.session_state.openai_api_key, type="password")
-    unsplash_key = st.text_input("Unsplash API 키 (선택사항)", value=st.session_state.unsplash_api_key, type="password")
-    
-    if st.button("API 키 저장"):
-        st.session_state.openai_api_key = openai_key
-        st.session_state.unsplash_api_key = unsplash_key
-        st.success("API 키가 저장되었습니다.")
 
 # 사이드바
 with st.sidebar:
     st.header("FASHION TREND-SETTER")
-    search_type = "패션 트렌드"  # 기본값 고정
+    
+    # 패션 트렌드/용어 선택
+    search_type = st.radio(
+        "패션 트렌드/용어 선택",
+        ["패션 트렌드", "패션 용어"]
+    )
+    
+    # 패션 브랜드 선택
+    brands = ["전체", "구찌(Gucci)", "루이비통(Louis Vuitton)", "샤넬(Chanel)", "프라다(Prada)", 
+              "발렌시아가(Balenciaga)", "디올(Dior)", "버버리(Burberry)", "에르메스(Hermes)",
+              "생로랑(Saint Laurent)", "나이키(Nike)", "아디다스(Adidas)"]
+    selected_brand = st.selectbox("패션 브랜드 선택", brands)
+    
+    # API 키 입력 섹션 (사이드바)
+    with st.expander("API 키 설정"):
+        openai_key = st.text_input("OpenAI API 키", value=st.session_state.openai_api_key, type="password")
+        unsplash_key = st.text_input("Unsplash API 키 (선택사항)", value=st.session_state.unsplash_api_key, type="password")
+        
+        if st.button("API 키 저장"):
+            st.session_state.openai_api_key = openai_key
+            st.session_state.unsplash_api_key = unsplash_key
+            st.success("API 키가 저장되었습니다.")
+    
+    # 푸터 정보 (사이드바 하단)
+    st.markdown("<div class='sidebar-footer'>", unsafe_allow_html=True)
+    st.markdown("<div class='footer-small'>### FASHION TREND-SETTER 앱 정보</div>", unsafe_allow_html=True)
+    st.markdown("<div class='footer-tiny'>이 앱은 OpenAI API를 사용하여 패션 트렌드와 용어에 대한 정보를 제공합니다.<br>트렌드 이미지는 Unsplash API를 통해 제공됩니다.</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# 타이틀
+st.title("FASHION TREND-SETTER")
+st.markdown("### 패션 트렌드/용어")
 
 # 검색 기능
 search_query = st.text_input("", placeholder="(예: Y2K 패션, 아방가르드, 하이엔드 등)")
@@ -172,14 +196,20 @@ def get_fashion_term_info(query):
 if search_query:
     # API 키 확인
     if not st.session_state.openai_api_key:
-        st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
+        st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
     else:
         with st.spinner("정보를 검색 중입니다..."):
             try:
+                # 브랜드 정보 추가
+                search_text = search_query
+                if selected_brand != "전체":
+                    brand_name = selected_brand.split("(")[0] if "(" in selected_brand else selected_brand
+                    search_text = f"{search_text} {brand_name}"
+                
                 if search_type == "패션 트렌드":
                     # 패션 트렌드 정보 가져오기
                     import json
-                    trend_info_str = get_fashion_trend_info(search_query)
+                    trend_info_str = get_fashion_trend_info(search_text)
                     if trend_info_str:
                         try:
                             trend_info = json.loads(trend_info_str)
@@ -192,13 +222,13 @@ if search_query:
                                     raise KeyError(f"Missing required key: {key}")
                             
                             # 이미지 URL 가져오기
-                            image_url = get_image_url(search_query + " fashion")
+                            image_url = get_image_url(search_text + " fashion")
                             
                             # 트렌드 정보 표시
                             col1, col2 = st.columns([1, 1])
                             
                             with col1:
-                                st.markdown(f"<div class='card'><h2>{search_query}</h2>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='card'><h2>{search_text}</h2>", unsafe_allow_html=True)
                                 st.markdown(f"<p>{trend_info['description']}</p></div>", unsafe_allow_html=True)
                                 
                                 st.markdown("<div class='card'><h3>스타일링 팁</h3>", unsafe_allow_html=True)
@@ -215,7 +245,7 @@ if search_query:
                             
                             with col2:
                                 st.markdown("<div class='card'>", unsafe_allow_html=True)
-                                st.image(image_url, caption=f"{search_query} 이미지", use_container_width=True)
+                                st.image(image_url, caption=f"{search_text} 이미지", use_container_width=True)
                                 st.markdown("</div>", unsafe_allow_html=True)
                         except json.JSONDecodeError as e:
                             st.error(f"JSON 파싱 오류: {e}")
@@ -223,10 +253,10 @@ if search_query:
                         except KeyError as e:
                             st.error(f"필수 데이터 누락: {e}")
                 
-                else:  # 패션 용어/브랜드
+                else:  # 패션 용어
                     # 패션 용어 정보 가져오기
                     import json
-                    term_info_str = get_fashion_term_info(search_query)
+                    term_info_str = get_fashion_term_info(search_text)
                     if term_info_str:
                         try:
                             term_info = json.loads(term_info_str)
@@ -239,13 +269,13 @@ if search_query:
                                     raise KeyError(f"Missing required key: {key}")
                             
                             # 이미지 URL 가져오기
-                            image_url = get_image_url(search_query + " fashion")
+                            image_url = get_image_url(search_text + " fashion")
                             
                             # 용어 정보 표시
                             col1, col2 = st.columns([1, 1])
                             
                             with col1:
-                                st.markdown(f"<div class='card'><h2>{search_query}</h2>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='card'><h2>{search_text}</h2>", unsafe_allow_html=True)
                                 st.markdown(f"<p>{term_info['definition']}</p></div>", unsafe_allow_html=True)
                                 
                                 st.markdown("<div class='card'><h3>예시</h3>", unsafe_allow_html=True)
@@ -267,7 +297,7 @@ if search_query:
                             
                             with col2:
                                 st.markdown("<div class='card'>", unsafe_allow_html=True)
-                                st.image(image_url, caption=f"{search_query} 이미지", use_container_width=True)
+                                st.image(image_url, caption=f"{search_text} 이미지", use_container_width=True)
                                 st.markdown("</div>", unsafe_allow_html=True)
                         except json.JSONDecodeError as e:
                             st.error(f"JSON 파싱 오류: {e}")
@@ -277,9 +307,4 @@ if search_query:
             
             except Exception as e:
                 st.error(f"오류 발생: {e}")
-                st.error("검색 결과를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
-
-# 앱 정보 (하단)
-st.markdown("<div class='footer-container'></div>", unsafe_allow_html=True)
-st.markdown("<div class='footer-small'>### FASHION TREND-SETTER 앱 정보</div>", unsafe_allow_html=True)
-st.markdown("<div class='footer-tiny'>이 앱은 OpenAI API를 사용하여 패션 트렌드와 용어에 대한 정보를 제공합니다.<br>트렌드 이미지는 Unsplash API를 통해 제공됩니다.</div>", unsafe_allow_html=True) 
+                st.error("검색 결과를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.") 
