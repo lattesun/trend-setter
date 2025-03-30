@@ -88,9 +88,9 @@ st.markdown("""
     
     /* All Things Fashion 폰트 변경 */
     .all-things-fashion {
-        font-size: 1.5em;
+        font-size: 1.2em;
         font-weight: 700;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
         font-family: 'Helvetica Neue', sans-serif;
     }
     
@@ -106,6 +106,7 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 15px;
+        line-height: 1.2;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -121,21 +122,15 @@ st.markdown("""
 
 # 사이드바
 with st.sidebar:
-    st.markdown('<div class="fashion-trend-title">FASHION TREND-SETTER</div>', unsafe_allow_html=True)
+    st.markdown('<div class="fashion-trend-title">FASHION<br>TREND-SETTER</div>', unsafe_allow_html=True)
     
     # 패션 트렌드/용어 선택 (수정)
     st.markdown('<div class="all-things-fashion">All Things Fashion</div>', unsafe_allow_html=True)
-    search_type = st.radio(
+    search_option = st.radio(
         "",
-        ["Trend & Information"]
+        ["Trend & Information", "Brands"]
     )
-    search_type = "패션 트렌드"  # 항상 패션 트렌드 검색 사용
-    
-    # 패션 브랜드 선택
-    brands = ["전체", "구찌(Gucci)", "루이비통(Louis Vuitton)", "샤넬(Chanel)", "프라다(Prada)", 
-              "발렌시아가(Balenciaga)", "디올(Dior)", "버버리(Burberry)", "에르메스(Hermes)",
-              "생로랑(Saint Laurent)", "나이키(Nike)", "아디다스(Adidas)"]
-    selected_brand = st.selectbox("패션 브랜드 선택", brands)
+    search_type = "패션 트렌드"  # 트렌드 검색 기본값
     
     # API 키 입력 섹션 (사이드바)
     with st.expander("API 키 설정"):
@@ -158,191 +153,256 @@ st.title("FASHION TREND-SETTER")
 st.markdown("### 패션 트렌드/용어")
 
 # 검색 기능
-search_query = st.text_input("", placeholder="(예: Y2K 패션, 아방가르드, 하이엔드 등)")
-
-# Unsplash API를 통한 이미지 검색 (무료 API 사용)
-def get_image_url(query):
-    try:
-        unsplash_access_key = st.session_state.unsplash_api_key
-        if not unsplash_access_key:
-            # API 키가 없는 경우 기본 이미지 반환
-            st.warning("Unsplash API 키가 설정되지 않아 기본 이미지를 사용합니다.")
+if search_option == "Trend & Information":
+    search_query = st.text_input("", placeholder="(예: Y2K 패션, 아방가르드, 하이엔드 등)")
+    
+    # Unsplash API를 통한 이미지 검색 (무료 API 사용)
+    def get_image_url(query):
+        try:
+            unsplash_access_key = st.session_state.unsplash_api_key
+            if not unsplash_access_key:
+                # API 키가 없는 경우 기본 이미지 반환
+                st.warning("Unsplash API 키가 설정되지 않아 기본 이미지를 사용합니다.")
+                return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+            
+            url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}"
+            response = requests.get(url)
+            data = response.json()
+            if 'results' in data and len(data['results']) > 0:
+                return data['results'][0]['urls']['regular']
+            else:
+                # 검색 결과가 없는 경우 기본 이미지 반환
+                return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+        except Exception as e:
+            st.error(f"이미지 검색 중 오류 발생: {e}")
+            # 오류 발생 시 기본 이미지 반환
             return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
-        
-        url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}"
-        response = requests.get(url)
-        data = response.json()
-        if 'results' in data and len(data['results']) > 0:
-            return data['results'][0]['urls']['regular']
+
+    # GPT를 통한 트렌드 정보 검색
+    def get_fashion_trend_info(query):
+        try:
+            # API 키 확인
+            if not st.session_state.openai_api_key:
+                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
+                return None
+            
+            # OpenAI 클라이언트 초기화
+            client = OpenAI(api_key=st.session_state.openai_api_key)
+            
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "당신은 패션 전문가입니다. 패션 트렌드, 용어, 브랜드에 대한 정보를 상세하게 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
+                    {"role": "user", "content": f"다음 패션 트렌드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"description\": \"상세 설명\", \"styling_tips\": [\"팁1\", \"팁2\", \"팁3\"], \"related_keywords\": [\"연관키워드1\", \"연관키워드2\", \"연관키워드3\"]}}"}
+                ],
+                response_format={"type": "json_object"}
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            st.error(f"OpenAI API 호출 중 오류 발생: {e}")
+            return None
+
+    # 패션 용어/브랜드 정보 검색
+    def get_fashion_term_info(query):
+        try:
+            # API 키 확인
+            if not st.session_state.openai_api_key:
+                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
+                return None
+            
+            # OpenAI 클라이언트 초기화
+            client = OpenAI(api_key=st.session_state.openai_api_key)
+            
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "당신은 패션 전문가입니다. 패션 용어와 브랜드에 대한 상세한 정보를 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
+                    {"role": "user", "content": f"다음 패션 용어 또는 브랜드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"definition\": \"정의\", \"examples\": [\"예시1\", \"예시2\"], \"brands\": [\"브랜드1\", \"브랜드2\"], \"related_terms\": [\"관련용어1\", \"관련용어2\"]}}"}
+                ],
+                response_format={"type": "json_object"}
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            st.error(f"OpenAI API 호출 중 오류 발생: {e}")
+            return None
+
+    # 검색 실행
+    if search_query:
+        # API 키 확인
+        if not st.session_state.openai_api_key:
+            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
         else:
-            # 검색 결과가 없는 경우 기본 이미지 반환
-            return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
-    except Exception as e:
-        st.error(f"이미지 검색 중 오류 발생: {e}")
-        # 오류 발생 시 기본 이미지 반환
-        return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
-
-# GPT를 통한 트렌드 정보 검색
-def get_fashion_trend_info(query):
-    try:
+            with st.spinner("정보를 검색 중입니다..."):
+                try:
+                    # 브랜드 정보 추가
+                    search_text = search_query
+                    if search_type == "패션 트렌드":
+                        # 패션 트렌드 정보 가져오기
+                        import json
+                        trend_info_str = get_fashion_trend_info(search_text)
+                        if trend_info_str:
+                            try:
+                                trend_info = json.loads(trend_info_str)
+                                
+                                # 필수 키가 있는지 확인
+                                required_keys = ["description", "styling_tips", "related_keywords"]
+                                for key in required_keys:
+                                    if key not in trend_info:
+                                        st.error(f"API 응답에 필요한 '{key}' 정보가 없습니다. 다시 시도해 주세요.")
+                                        raise KeyError(f"Missing required key: {key}")
+                                
+                                # 이미지 URL 가져오기
+                                image_url = get_image_url(search_text + " fashion")
+                                
+                                # 트렌드 정보 표시
+                                col1, col2 = st.columns([1, 1])
+                                
+                                with col1:
+                                    st.markdown(f"<div class='card'><h2>{search_text}</h2>", unsafe_allow_html=True)
+                                    st.markdown(f"<p>{trend_info['description']}</p></div>", unsafe_allow_html=True)
+                                    
+                                    st.markdown("<div class='card'><h3>스타일링 팁</h3>", unsafe_allow_html=True)
+                                    for tip in trend_info['styling_tips']:
+                                        st.markdown(f"- {tip}")
+                                    st.markdown("</div>", unsafe_allow_html=True)
+                                    
+                                    st.markdown("<div class='card'><h3>연관 키워드</h3>", unsafe_allow_html=True)
+                                    keyword_html = ""
+                                    for keyword in trend_info['related_keywords']:
+                                        keyword_html += f"<span class='related-keyword'>{keyword}</span>"
+                                    st.markdown(keyword_html, unsafe_allow_html=True)
+                                    st.markdown("</div>", unsafe_allow_html=True)
+                                
+                                with col2:
+                                    st.markdown("<div class='card'>", unsafe_allow_html=True)
+                                    st.image(image_url, caption=f"{search_text} 이미지", use_container_width=True)
+                                    st.markdown("</div>", unsafe_allow_html=True)
+                            except json.JSONDecodeError as e:
+                                st.error(f"JSON 파싱 오류: {e}")
+                                st.error("API 응답이 올바른 JSON 형식이 아닙니다. 다시 시도해 주세요.")
+                            except KeyError as e:
+                                st.error(f"필수 데이터 누락: {e}")
+                
+                    else:  # 패션 용어
+                        # 패션 용어 정보 가져오기
+                        import json
+                        term_info_str = get_fashion_term_info(search_text)
+                        if term_info_str:
+                            try:
+                                term_info = json.loads(term_info_str)
+                                
+                                # 필수 키가 있는지 확인
+                                required_keys = ["definition", "examples", "brands", "related_terms"]
+                                for key in required_keys:
+                                    if key not in term_info:
+                                        st.error(f"API 응답에 필요한 '{key}' 정보가 없습니다. 다시 시도해 주세요.")
+                                        raise KeyError(f"Missing required key: {key}")
+                                
+                                # 이미지 URL 가져오기
+                                image_url = get_image_url(search_text + " fashion")
+                                
+                                # 용어 정보 표시
+                                col1, col2 = st.columns([1, 1])
+                                
+                                with col1:
+                                    st.markdown(f"<div class='card'><h2>{search_text}</h2>", unsafe_allow_html=True)
+                                    st.markdown(f"<p>{term_info['definition']}</p></div>", unsafe_allow_html=True)
+                                    
+                                    st.markdown("<div class='card'><h3>예시</h3>", unsafe_allow_html=True)
+                                    for example in term_info['examples']:
+                                        st.markdown(f"- {example}")
+                                    st.markdown("</div>", unsafe_allow_html=True)
+                                    
+                                    st.markdown("<div class='card'><h3>관련 브랜드</h3>", unsafe_allow_html=True)
+                                    for brand in term_info['brands']:
+                                        st.markdown(f"- {brand}")
+                                    st.markdown("</div>", unsafe_allow_html=True)
+                                    
+                                    st.markdown("<div class='card'><h3>관련 용어</h3>", unsafe_allow_html=True)
+                                    term_html = ""
+                                    for term in term_info['related_terms']:
+                                        term_html += f"<span class='related-keyword'>{term}</span>"
+                                    st.markdown(term_html, unsafe_allow_html=True)
+                                    st.markdown("</div>", unsafe_allow_html=True)
+                                
+                                with col2:
+                                    st.markdown("<div class='card'>", unsafe_allow_html=True)
+                                    st.image(image_url, caption=f"{search_text} 이미지", use_container_width=True)
+                                    st.markdown("</div>", unsafe_allow_html=True)
+                            except json.JSONDecodeError as e:
+                                st.error(f"JSON 파싱 오류: {e}")
+                                st.error("API 응답이 올바른 JSON 형식이 아닙니다. 다시 시도해 주세요.")
+                            except KeyError as e:
+                                st.error(f"필수 데이터 누락: {e}")
+                
+                except Exception as e:
+                    st.error(f"오류 발생: {e}")
+                    st.error("검색 결과를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
+else:  # 브랜드 검색
+    st.markdown("### 패션 브랜드 정보")
+    brands = ["구찌(Gucci)", "루이비통(Louis Vuitton)", "샤넬(Chanel)", "프라다(Prada)", 
+              "발렌시아가(Balenciaga)", "디올(Dior)", "버버리(Burberry)", "에르메스(Hermes)",
+              "생로랑(Saint Laurent)", "나이키(Nike)", "아디다스(Adidas)"]
+    
+    selected_brand = st.selectbox("브랜드 선택", brands)
+    search_query = selected_brand
+    
+    if selected_brand:
         # API 키 확인
         if not st.session_state.openai_api_key:
-            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
-            return None
-            
-        # OpenAI 클라이언트 초기화
-        client = OpenAI(api_key=st.session_state.openai_api_key)
-        
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "당신은 패션 전문가입니다. 패션 트렌드, 용어, 브랜드에 대한 정보를 상세하게 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
-                {"role": "user", "content": f"다음 패션 트렌드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"description\": \"상세 설명\", \"styling_tips\": [\"팁1\", \"팁2\", \"팁3\"], \"related_keywords\": [\"연관키워드1\", \"연관키워드2\", \"연관키워드3\"]}}"}
-            ],
-            response_format={"type": "json_object"}
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        st.error(f"OpenAI API 호출 중 오류 발생: {e}")
-        return None
-
-# 패션 용어/브랜드 정보 검색
-def get_fashion_term_info(query):
-    try:
-        # API 키 확인
-        if not st.session_state.openai_api_key:
-            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
-            return None
-            
-        # OpenAI 클라이언트 초기화
-        client = OpenAI(api_key=st.session_state.openai_api_key)
-        
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "당신은 패션 전문가입니다. 패션 용어와 브랜드에 대한 상세한 정보를 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
-                {"role": "user", "content": f"다음 패션 용어 또는 브랜드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"definition\": \"정의\", \"examples\": [\"예시1\", \"예시2\"], \"brands\": [\"브랜드1\", \"브랜드2\"], \"related_terms\": [\"관련용어1\", \"관련용어2\"]}}"}
-            ],
-            response_format={"type": "json_object"}
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        st.error(f"OpenAI API 호출 중 오류 발생: {e}")
-        return None
-
-# 검색 실행
-if search_query:
-    # API 키 확인
-    if not st.session_state.openai_api_key:
-        st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
-    else:
-        with st.spinner("정보를 검색 중입니다..."):
-            try:
-                # 브랜드 정보 추가
-                search_text = search_query
-                if selected_brand != "전체":
+            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
+        else:
+            with st.spinner("브랜드 정보를 검색 중입니다..."):
+                try:
+                    # 브랜드 이름 정리
                     brand_name = selected_brand.split("(")[0] if "(" in selected_brand else selected_brand
-                    search_text = f"{search_text} {brand_name}"
-                
-                if search_type == "패션 트렌드":
-                    # 패션 트렌드 정보 가져오기
+                    
+                    # 브랜드 정보 가져오기
                     import json
-                    trend_info_str = get_fashion_trend_info(search_text)
-                    if trend_info_str:
+                    brand_info_str = get_fashion_term_info(brand_name)
+                    if brand_info_str:
                         try:
-                            trend_info = json.loads(trend_info_str)
-                            
-                            # 필수 키가 있는지 확인
-                            required_keys = ["description", "styling_tips", "related_keywords"]
-                            for key in required_keys:
-                                if key not in trend_info:
-                                    st.error(f"API 응답에 필요한 '{key}' 정보가 없습니다. 다시 시도해 주세요.")
-                                    raise KeyError(f"Missing required key: {key}")
-                            
-                            # 이미지 URL 가져오기
-                            image_url = get_image_url(search_text + " fashion")
-                            
-                            # 트렌드 정보 표시
-                            col1, col2 = st.columns([1, 1])
-                            
-                            with col1:
-                                st.markdown(f"<div class='card'><h2>{search_text}</h2>", unsafe_allow_html=True)
-                                st.markdown(f"<p>{trend_info['description']}</p></div>", unsafe_allow_html=True)
-                                
-                                st.markdown("<div class='card'><h3>스타일링 팁</h3>", unsafe_allow_html=True)
-                                for tip in trend_info['styling_tips']:
-                                    st.markdown(f"- {tip}")
-                                st.markdown("</div>", unsafe_allow_html=True)
-                                
-                                st.markdown("<div class='card'><h3>연관 키워드</h3>", unsafe_allow_html=True)
-                                keyword_html = ""
-                                for keyword in trend_info['related_keywords']:
-                                    keyword_html += f"<span class='related-keyword'>{keyword}</span>"
-                                st.markdown(keyword_html, unsafe_allow_html=True)
-                                st.markdown("</div>", unsafe_allow_html=True)
-                            
-                            with col2:
-                                st.markdown("<div class='card'>", unsafe_allow_html=True)
-                                st.image(image_url, caption=f"{search_text} 이미지", use_container_width=True)
-                                st.markdown("</div>", unsafe_allow_html=True)
-                        except json.JSONDecodeError as e:
-                            st.error(f"JSON 파싱 오류: {e}")
-                            st.error("API 응답이 올바른 JSON 형식이 아닙니다. 다시 시도해 주세요.")
-                        except KeyError as e:
-                            st.error(f"필수 데이터 누락: {e}")
-                
-                else:  # 패션 용어
-                    # 패션 용어 정보 가져오기
-                    import json
-                    term_info_str = get_fashion_term_info(search_text)
-                    if term_info_str:
-                        try:
-                            term_info = json.loads(term_info_str)
+                            brand_info = json.loads(brand_info_str)
                             
                             # 필수 키가 있는지 확인
                             required_keys = ["definition", "examples", "brands", "related_terms"]
                             for key in required_keys:
-                                if key not in term_info:
+                                if key not in brand_info:
                                     st.error(f"API 응답에 필요한 '{key}' 정보가 없습니다. 다시 시도해 주세요.")
                                     raise KeyError(f"Missing required key: {key}")
                             
                             # 이미지 URL 가져오기
-                            image_url = get_image_url(search_text + " fashion")
+                            image_url = get_image_url(brand_name + " fashion brand")
                             
-                            # 용어 정보 표시
+                            # 브랜드 정보 표시
                             col1, col2 = st.columns([1, 1])
                             
                             with col1:
-                                st.markdown(f"<div class='card'><h2>{search_text}</h2>", unsafe_allow_html=True)
-                                st.markdown(f"<p>{term_info['definition']}</p></div>", unsafe_allow_html=True)
+                                st.markdown(f"<div class='card'><h2>{brand_name}</h2>", unsafe_allow_html=True)
+                                st.markdown(f"<p>{brand_info['definition']}</p></div>", unsafe_allow_html=True)
                                 
-                                st.markdown("<div class='card'><h3>예시</h3>", unsafe_allow_html=True)
-                                for example in term_info['examples']:
+                                st.markdown("<div class='card'><h3>대표 제품/스타일</h3>", unsafe_allow_html=True)
+                                for example in brand_info['examples']:
                                     st.markdown(f"- {example}")
-                                st.markdown("</div>", unsafe_allow_html=True)
-                                
-                                st.markdown("<div class='card'><h3>관련 브랜드</h3>", unsafe_allow_html=True)
-                                for brand in term_info['brands']:
-                                    st.markdown(f"- {brand}")
                                 st.markdown("</div>", unsafe_allow_html=True)
                                 
                                 st.markdown("<div class='card'><h3>관련 용어</h3>", unsafe_allow_html=True)
                                 term_html = ""
-                                for term in term_info['related_terms']:
+                                for term in brand_info['related_terms']:
                                     term_html += f"<span class='related-keyword'>{term}</span>"
                                 st.markdown(term_html, unsafe_allow_html=True)
                                 st.markdown("</div>", unsafe_allow_html=True)
                             
                             with col2:
                                 st.markdown("<div class='card'>", unsafe_allow_html=True)
-                                st.image(image_url, caption=f"{search_text} 이미지", use_container_width=True)
+                                st.image(image_url, caption=f"{brand_name} 이미지", use_container_width=True)
                                 st.markdown("</div>", unsafe_allow_html=True)
                         except json.JSONDecodeError as e:
                             st.error(f"JSON 파싱 오류: {e}")
                             st.error("API 응답이 올바른 JSON 형식이 아닙니다. 다시 시도해 주세요.")
                         except KeyError as e:
                             st.error(f"필수 데이터 누락: {e}")
-            
-            except Exception as e:
-                st.error(f"오류 발생: {e}")
-                st.error("검색 결과를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.") 
+                
+                except Exception as e:
+                    st.error(f"오류 발생: {e}")
+                    st.error("브랜드 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.") 
