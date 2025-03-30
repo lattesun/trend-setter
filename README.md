@@ -7,6 +7,7 @@
 - 패션 트렌드 검색: 최신 패션 트렌드에 대한 정보, 스타일링 팁, 연관 키워드 제공
 - 패션 용어/브랜드 검색: 패션 용어와 브랜드에 대한 정의, 예시, 관련 브랜드, 관련 용어 제공
 - 시각적 정보: 검색어와 관련된 이미지 제공
+- API 키 설정: 사이드바에서 OpenAI API 키와 Unsplash API 키를 웹 인터페이스에서 직접 입력 가능
 
 ## 설치 및 실행 방법
 
@@ -21,17 +22,22 @@ cd 패션-트렌드-세터
 pip install -r requirements.txt
 ```
 
-3. 환경 변수 설정
-`.env` 파일을 생성하고 다음과 같이 API 키를 설정하세요:
-```
-OPENAI_API_KEY=여기에_OPENAI_API_키_입력
-UNSPLASH_ACCESS_KEY=여기에_UNSPLASH_API_키_입력
-```
-
-4. 애플리케이션 실행
+3. 애플리케이션 실행
 ```
 streamlit run app.py
 ```
+
+## API 키 설정 방법
+
+1. [OpenAI API 키](https://platform.openai.com/account/api-keys)를 발급받으세요.
+2. (선택사항) [Unsplash API 키](https://unsplash.com/developers)를 발급받으세요.
+3. API 키는 두 가지 방법으로 설정할 수 있습니다:
+   - `.env` 파일에 API 키 설정:
+     ```
+     OPENAI_API_KEY=여기에_OPENAI_API_키_입력
+     UNSPLASH_ACCESS_KEY=여기에_UNSPLASH_API_키_입력
+     ```
+   - 웹 인터페이스에서 직접 설정: 애플리케이션 사이드바의 'API 설정' 섹션에서 API 키를 입력하고 저장할 수 있습니다.
 
 ## 기술 스택
 
