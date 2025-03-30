@@ -56,6 +56,20 @@ st.markdown("""
         margin-bottom: 8px;
         font-size: 14px;
     }
+    .footer-small {
+        font-size: 14px;
+        margin-top: 40px;
+    }
+    .footer-tiny {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    .footer-container {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eaeaea;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -239,7 +253,6 @@ if search_query:
                 st.error("검색 결과를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
 
 # 앱 정보 (하단)
-st.markdown("---")
-st.markdown("### 패션 트렌드 세터 앱 정보")
-st.markdown("이 앱은 OpenAI API를 사용하여 패션 트렌드와 용어에 대한 정보를 제공합니다.")
-st.markdown("트렌드 이미지는 Unsplash API를 통해 제공됩니다.") 
+st.markdown("<div class='footer-container'></div>", unsafe_allow_html=True)
+st.markdown("<div class='footer-small'>### 패션 트렌드 세터 앱 정보</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer-tiny'>이 앱은 OpenAI API를 사용하여 패션 트렌드와 용어에 대한 정보를 제공합니다.<br>트렌드 이미지는 Unsplash API를 통해 제공됩니다.</div>", unsafe_allow_html=True) 
