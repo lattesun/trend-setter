@@ -12,8 +12,8 @@ load_dotenv()
 
 # 페이지 설정
 st.set_page_config(
-    page_title="패션 트렌드 세터",
-    page_icon="👗",
+    page_title="FASHION TREND-SETTER",
+    page_icon=None,
     layout="wide"
 )
 
@@ -74,8 +74,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 타이틀
-st.title("👗 패션 트렌드 세터")
-st.markdown("### 최신 패션 트렌드와 용어를 검색하고 학습하세요")
+st.title("FASHION TREND-SETTER")
+st.markdown("### 최신 패션 트렌드/용어 검색")
 
 # 사이드바
 with st.sidebar:
@@ -97,7 +97,7 @@ with st.sidebar:
             st.success("API 키가 저장되었습니다.")
 
 # 검색 기능
-search_query = st.text_input("검색어 입력 (예: Y2K 패션, 아방가르드, 하이엔드 등)", placeholder="여기에 입력하세요...")
+search_query = st.text_input("", placeholder="(예: Y2K 패션, 아방가르드, 하이엔드 등)")
 
 # Unsplash API를 통한 이미지 검색 (무료 API 사용)
 def get_image_url(query):
@@ -254,5 +254,5 @@ if search_query:
 
 # 앱 정보 (하단)
 st.markdown("<div class='footer-container'></div>", unsafe_allow_html=True)
-st.markdown("<div class='footer-small'>### 패션 트렌드 세터 앱 정보</div>", unsafe_allow_html=True)
+st.markdown("<div class='footer-small'>### FASHION TREND-SETTER 앱 정보</div>", unsafe_allow_html=True)
 st.markdown("<div class='footer-tiny'>이 앱은 OpenAI API를 사용하여 패션 트렌드와 용어에 대한 정보를 제공합니다.<br>트렌드 이미지는 Unsplash API를 통해 제공됩니다.</div>", unsafe_allow_html=True) 
