@@ -150,7 +150,10 @@ with st.sidebar:
 
 # 타이틀
 st.title("FASHION TREND-SETTER")
-st.markdown("### 패션 트렌드/용어")
+if search_option == "Trend & Information":
+    st.markdown("### 패션 트렌드/용어")
+else:
+    st.markdown("### 패션 브랜드 알아보기")
 
 # 검색 기능
 if search_option == "Trend & Information":
