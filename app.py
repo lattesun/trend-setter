@@ -87,11 +87,12 @@ st.markdown("""
 with st.sidebar:
     st.header("FASHION TREND-SETTER")
     
-    # 패션 트렌드/용어 선택
+    # 패션 트렌드/용어 선택 (수정)
     search_type = st.radio(
-        "패션 트렌드/용어 선택",
-        ["패션 트렌드", "패션 용어"]
+        "All Things Fashion",
+        ["Trend & Information"]
     )
+    search_type = "패션 트렌드"  # 항상 패션 트렌드 검색 사용
     
     # 패션 브랜드 선택
     brands = ["전체", "구찌(Gucci)", "루이비통(Louis Vuitton)", "샤넬(Chanel)", "프라다(Prada)", 
