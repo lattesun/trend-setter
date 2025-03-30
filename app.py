@@ -80,16 +80,53 @@ st.markdown("""
         padding: 20px;
         width: 100%;
     }
+    
+    /* 사이드바 스타일 변경 */
+    .sidebar.sidebar-content {
+        background: linear-gradient(to bottom, #f0f0f0, #d0d0d0);
+    }
+    
+    /* All Things Fashion 폰트 변경 */
+    .all-things-fashion {
+        font-size: 1.5em;
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-family: 'Helvetica Neue', sans-serif;
+    }
+    
+    /* FASHION TREND-SETTER 입체적 스타일 */
+    .fashion-trend-title {
+        font-size: 1.8em;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #333;
+        text-shadow: 2px 2px 3px rgba(0,0,0,0.1);
+        background: linear-gradient(to bottom, #444, #000);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 15px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 사이드바 스타일 변경
+st.markdown("""
+<style>
+    [data-testid="stSidebar"] {
+        background: linear-gradient(to bottom, #f5f5f5, #e0e0e0, #d0d0d0);
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # 사이드바
 with st.sidebar:
-    st.header("FASHION TREND-SETTER")
+    st.markdown('<div class="fashion-trend-title">FASHION TREND-SETTER</div>', unsafe_allow_html=True)
     
     # 패션 트렌드/용어 선택 (수정)
+    st.markdown('<div class="all-things-fashion">All Things Fashion</div>', unsafe_allow_html=True)
     search_type = st.radio(
-        "All Things Fashion",
+        "",
         ["Trend & Information"]
     )
     search_type = "패션 트렌드"  # 항상 패션 트렌드 검색 사용
