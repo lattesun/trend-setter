@@ -190,7 +190,7 @@ if search_option == "Trend & Information":
             client = OpenAI(api_key=st.session_state.openai_api_key)
             
             response = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "당신은 패션 전문가입니다. 패션 트렌드, 용어, 브랜드에 대한 정보를 상세하게 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
                     {"role": "user", "content": f"다음 패션 트렌드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"description\": \"상세 설명\", \"styling_tips\": [\"팁1\", \"팁2\", \"팁3\"], \"related_keywords\": [\"연관키워드1\", \"연관키워드2\", \"연관키워드3\"]}}"}
@@ -214,7 +214,7 @@ if search_option == "Trend & Information":
             client = OpenAI(api_key=st.session_state.openai_api_key)
             
             response = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "당신은 패션 전문가입니다. 패션 용어와 브랜드에 대한 상세한 정보를 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
                     {"role": "user", "content": f"다음 패션 용어 또는 브랜드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"definition\": \"정의\", \"examples\": [\"예시1\", \"예시2\"], \"brands\": [\"브랜드1\", \"브랜드2\"], \"related_terms\": [\"관련용어1\", \"관련용어2\"]}}"}
@@ -339,15 +339,10 @@ if search_option == "Trend & Information":
                     st.error(f"오류 발생: {e}")
                     st.error("검색 결과를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
 else:  # 브랜드 검색
-    st.markdown("### 패션 브랜드 정보")
-    brands = ["구찌(Gucci)", "루이비통(Louis Vuitton)", "샤넬(Chanel)", "프라다(Prada)", 
-              "발렌시아가(Balenciaga)", "디올(Dior)", "버버리(Burberry)", "에르메스(Hermes)",
-              "생로랑(Saint Laurent)", "나이키(Nike)", "아디다스(Adidas)"]
+    # 패션 브랜드 정보 문구와 드롭다운 대신 검색창 추가
+    search_query = st.text_input("", placeholder="브랜드명을 입력하세요 (예: 구찌, 프라다, 나이키 등)")
     
-    selected_brand = st.selectbox("브랜드 선택", brands)
-    search_query = selected_brand
-    
-    if selected_brand:
+    if search_query:
         # API 키 확인
         if not st.session_state.openai_api_key:
             st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
@@ -355,7 +350,7 @@ else:  # 브랜드 검색
             with st.spinner("브랜드 정보를 검색 중입니다..."):
                 try:
                     # 브랜드 이름 정리
-                    brand_name = selected_brand.split("(")[0] if "(" in selected_brand else selected_brand
+                    brand_name = search_query
                     
                     # 브랜드 정보 가져오기
                     import json
