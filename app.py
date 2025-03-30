@@ -1,5 +1,6 @@
 import streamlit as st
 import openai
+from openai import OpenAI
 import requests
 from PIL import Image
 from io import BytesIO
@@ -114,10 +115,10 @@ def get_fashion_trend_info(query):
             st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
             return None
             
-        # API 키 설정
-        openai.api_key = st.session_state.openai_api_key
+        # OpenAI 클라이언트 초기화
+        client = OpenAI(api_key=st.session_state.openai_api_key)
         
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "당신은 패션 전문가입니다. 패션 트렌드, 용어, 브랜드에 대한 정보를 상세하게 제공해주세요."},
@@ -137,10 +138,10 @@ def get_fashion_term_info(query):
             st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
             return None
             
-        # API 키 설정
-        openai.api_key = st.session_state.openai_api_key
+        # OpenAI 클라이언트 초기화
+        client = OpenAI(api_key=st.session_state.openai_api_key)
         
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "당신은 패션 전문가입니다. 패션 용어와 브랜드에 대한 상세한 정보를 제공해주세요."},
@@ -164,72 +165,74 @@ if search_query:
                     # 패션 트렌드 정보 가져오기
                     import json
                     trend_info_str = get_fashion_trend_info(search_query)
-                    trend_info = json.loads(trend_info_str)
-                    
-                    # 이미지 URL 가져오기
-                    image_url = get_image_url(search_query + " fashion")
-                    
-                    # 트렌드 정보 표시
-                    col1, col2 = st.columns([1, 1])
-                    
-                    with col1:
-                        st.markdown(f"<div class='card'><h2>{search_query}</h2>", unsafe_allow_html=True)
-                        st.markdown(f"<p>{trend_info['description']}</p></div>", unsafe_allow_html=True)
+                    if trend_info_str:
+                        trend_info = json.loads(trend_info_str)
                         
-                        st.markdown("<div class='card'><h3>스타일링 팁</h3>", unsafe_allow_html=True)
-                        for tip in trend_info['styling_tips']:
-                            st.markdown(f"- {tip}")
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        # 이미지 URL 가져오기
+                        image_url = get_image_url(search_query + " fashion")
                         
-                        st.markdown("<div class='card'><h3>연관 키워드</h3>", unsafe_allow_html=True)
-                        keyword_html = ""
-                        for keyword in trend_info['related_keywords']:
-                            keyword_html += f"<span class='related-keyword'>{keyword}</span>"
-                        st.markdown(keyword_html, unsafe_allow_html=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown("<div class='card'>", unsafe_allow_html=True)
-                        st.image(image_url, caption=f"{search_query} 이미지", use_column_width=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        # 트렌드 정보 표시
+                        col1, col2 = st.columns([1, 1])
+                        
+                        with col1:
+                            st.markdown(f"<div class='card'><h2>{search_query}</h2>", unsafe_allow_html=True)
+                            st.markdown(f"<p>{trend_info['description']}</p></div>", unsafe_allow_html=True)
+                            
+                            st.markdown("<div class='card'><h3>스타일링 팁</h3>", unsafe_allow_html=True)
+                            for tip in trend_info['styling_tips']:
+                                st.markdown(f"- {tip}")
+                            st.markdown("</div>", unsafe_allow_html=True)
+                            
+                            st.markdown("<div class='card'><h3>연관 키워드</h3>", unsafe_allow_html=True)
+                            keyword_html = ""
+                            for keyword in trend_info['related_keywords']:
+                                keyword_html += f"<span class='related-keyword'>{keyword}</span>"
+                            st.markdown(keyword_html, unsafe_allow_html=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                        
+                        with col2:
+                            st.markdown("<div class='card'>", unsafe_allow_html=True)
+                            st.image(image_url, caption=f"{search_query} 이미지", use_column_width=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
                 
                 else:  # 패션 용어/브랜드
                     # 패션 용어 정보 가져오기
                     import json
                     term_info_str = get_fashion_term_info(search_query)
-                    term_info = json.loads(term_info_str)
-                    
-                    # 이미지 URL 가져오기
-                    image_url = get_image_url(search_query + " fashion")
-                    
-                    # 용어 정보 표시
-                    col1, col2 = st.columns([1, 1])
-                    
-                    with col1:
-                        st.markdown(f"<div class='card'><h2>{search_query}</h2>", unsafe_allow_html=True)
-                        st.markdown(f"<p>{term_info['definition']}</p></div>", unsafe_allow_html=True)
+                    if term_info_str:
+                        term_info = json.loads(term_info_str)
                         
-                        st.markdown("<div class='card'><h3>예시</h3>", unsafe_allow_html=True)
-                        for example in term_info['examples']:
-                            st.markdown(f"- {example}")
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        # 이미지 URL 가져오기
+                        image_url = get_image_url(search_query + " fashion")
                         
-                        st.markdown("<div class='card'><h3>관련 브랜드</h3>", unsafe_allow_html=True)
-                        for brand in term_info['brands']:
-                            st.markdown(f"- {brand}")
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        # 용어 정보 표시
+                        col1, col2 = st.columns([1, 1])
                         
-                        st.markdown("<div class='card'><h3>관련 용어</h3>", unsafe_allow_html=True)
-                        term_html = ""
-                        for term in term_info['related_terms']:
-                            term_html += f"<span class='related-keyword'>{term}</span>"
-                        st.markdown(term_html, unsafe_allow_html=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    with col2:
-                        st.markdown("<div class='card'>", unsafe_allow_html=True)
-                        st.image(image_url, caption=f"{search_query} 이미지", use_column_width=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
+                        with col1:
+                            st.markdown(f"<div class='card'><h2>{search_query}</h2>", unsafe_allow_html=True)
+                            st.markdown(f"<p>{term_info['definition']}</p></div>", unsafe_allow_html=True)
+                            
+                            st.markdown("<div class='card'><h3>예시</h3>", unsafe_allow_html=True)
+                            for example in term_info['examples']:
+                                st.markdown(f"- {example}")
+                            st.markdown("</div>", unsafe_allow_html=True)
+                            
+                            st.markdown("<div class='card'><h3>관련 브랜드</h3>", unsafe_allow_html=True)
+                            for brand in term_info['brands']:
+                                st.markdown(f"- {brand}")
+                            st.markdown("</div>", unsafe_allow_html=True)
+                            
+                            st.markdown("<div class='card'><h3>관련 용어</h3>", unsafe_allow_html=True)
+                            term_html = ""
+                            for term in term_info['related_terms']:
+                                term_html += f"<span class='related-keyword'>{term}</span>"
+                            st.markdown(term_html, unsafe_allow_html=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                        
+                        with col2:
+                            st.markdown("<div class='card'>", unsafe_allow_html=True)
+                            st.image(image_url, caption=f"{search_query} 이미지", use_column_width=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
             
             except Exception as e:
                 st.error(f"오류 발생: {e}")

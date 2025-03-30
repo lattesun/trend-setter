@@ -42,8 +42,17 @@ streamlit run app.py
 ## 기술 스택
 
 - Streamlit: 웹 인터페이스
-- OpenAI API: 패션 정보 생성
+- OpenAI API (v1.69.0): 패션 정보 생성
 - Unsplash API: 이미지 검색
+
+## 주의사항
+
+- 이 애플리케이션은 OpenAI API v1.69.0 버전을 사용합니다.
+- 최신 버전의 OpenAI 라이브러리가 필요합니다.
+- 최신 버전으로 업데이트하려면 다음 명령어를 실행하세요:
+  ```
+  pip install openai --upgrade
+  ```
 
 ## 스트림릿 클라우드 배포
 
@@ -58,9 +67,4 @@ streamlit run app.py
 
 ## 라이센스
 
-이 프로젝트는 MIT 라이센스 하에 배포됩니다.
-
-## 주의사항
-
-- OpenAI API와 Unsplash API는 사용량에 따라 비용이 발생할 수 있습니다.
-- 이 앱은 학습 및 정보 제공 목적으로 제작되었습니다. 
+이 프로젝트는 MIT 라이센스 하에 배포됩니다. 
