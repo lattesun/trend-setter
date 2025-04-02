@@ -161,18 +161,24 @@ st.markdown("""
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         margin: 5px 0;
         height: 100%;
+        display: flex;
+        flex-direction: column;
     }
     .news-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
     }
-    .news-image {
+    .news-card img {
         width: 100%;
-        height: 120px;
+        height: 180px;
         object-fit: cover;
+        object-position: center;
     }
     .news-content {
         padding: 10px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
     }
     .news-category {
         font-size: 10px;
@@ -188,14 +194,10 @@ st.markdown("""
         height: 45px;
         overflow: hidden;
     }
-    .news-date {
+    .news-info {
         font-size: 10px;
         color: #6c757d;
-        margin-bottom: 2px;
-    }
-    .news-author {
-        font-size: 10px;
-        color: #6c757d;
+        margin-top: auto;
     }
 
     /* TREND NEWS 제목 스타일 */
@@ -322,12 +324,12 @@ st.markdown("""
 with st.sidebar:
     st.markdown('<div class="fashion-trend-title">FASHION<br>TREND-SETTER</div>', unsafe_allow_html=True)
     
-    # 패션 트렌드/용어 선택 (수정)
-    st.markdown('<div class="all-things-fashion">All Things Fashion</div>', unsafe_allow_html=True)
-    search_option = st.radio(
-        "",
-        ["Trend & Information", "Brands", "Styling Search"]
-    )
+    # 패션 트렌드/용어 선택 섹션 숨기기
+    # st.markdown('<div class="all-things-fashion">All Things Fashion</div>', unsafe_allow_html=True)
+    # search_option = st.radio(
+    #     "",
+    #     ["Trend & Information", "Brands", "Styling Search"]
+    # )
     search_type = "패션 트렌드"  # 트렌드 검색 기본값
     
     # API 키 입력 섹션 (사이드바)
@@ -494,7 +496,6 @@ if st.session_state.page == 'main':
     
     # 선택 버튼들
     st.markdown('<div class="main-content">', unsafe_allow_html=True)
-    st.markdown("### 원하는 검색 옵션을 선택하세요")
     
     # 버튼 스타일 추가
     st.markdown("""
@@ -506,7 +507,7 @@ if st.session_state.page == 'main':
         border-radius: 8px;
         background-color: #f8f9fa;
         color: #333;
-        border: 1px solid #ddd;
+        border: 2px solid #FF0000 !important;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
     }
@@ -551,14 +552,15 @@ else:
     /* 뒤로가기 버튼 스타일 */
     div.stButton > button:first-child {
         background-color: #f1f3f5;
-        border-color: #dee2e6;
+        border-color: #FF0000 !important;
+        border-width: 2px !important;
         color: #495057;
         font-weight: 500;
         margin-bottom: 20px;
     }
     div.stButton > button:first-child:hover {
         background-color: #e9ecef;
-        border-color: #ced4da;
+        border-color: #FF0000 !important;
     }
     </style>
     """, unsafe_allow_html=True)
