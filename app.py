@@ -7,6 +7,7 @@ from io import BytesIO
 import os
 from dotenv import load_dotenv
 import json
+import time
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -158,7 +159,7 @@ elif search_option == "Brands":
 else:
     st.markdown("### 스타일링 검색")
 
-# Unsplash API를 통한 이미지 검색 (무료 API 사용)
+# Unsplash API를 통한 이미지 검색 개선
 def get_image_url(query):
     try:
         unsplash_access_key = st.session_state.unsplash_api_key
@@ -167,18 +168,50 @@ def get_image_url(query):
             st.warning("Unsplash API 키가 설정되지 않아 기본 이미지를 사용합니다.")
             return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
         
-        url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}"
-        response = requests.get(url)
-        data = response.json()
-        if 'results' in data and len(data['results']) > 0:
-            return data['results'][0]['urls']['regular']
+        # 패션 관련 키워드 추가하여 관련성 높은 이미지 검색
+        # 검색 키워드 정제 (언어 감지 및 영문 처리)
+        if any('\u3131' <= c <= '\u318F' or '\uAC00' <= c <= '\uD7A3' for c in query):  # 한글 감지
+            search_query = f"{query} 패션 fashion"
         else:
-            # 검색 결과가 없는 경우 기본 이미지 반환
-            return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+            search_query = f"{query} fashion clothing"
+            
+        # 최대 3번 시도
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                url = f"https://api.unsplash.com/search/photos?query={search_query}&client_id={unsplash_access_key}&per_page=15&orientation=landscape"
+                response = requests.get(url)
+                data = response.json()
+                
+                if 'results' in data and len(data['results']) > 0:
+                    # 결과가 있으면 첫 번째 이미지 반환
+                    return data['results'][0]['urls']['regular']
+                else:
+                    # 결과가 없으면 키워드 단순화하여 재시도
+                    if attempt < max_attempts - 1:
+                        # 검색어 단순화
+                        if "fashion clothing" in search_query:
+                            search_query = query.split()[0] + " fashion"
+                        elif "fashion" in search_query:
+                            search_query = query
+                        time.sleep(0.5)  # API 호출 간 약간의 지연
+                        continue
+                    else:
+                        # 기본 패션 이미지 반환
+                        return "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=600"
+            except Exception as e:
+                if attempt < max_attempts - 1:
+                    time.sleep(0.5)
+                    continue
+                else:
+                    raise e
+                    
+        # 모든 시도 실패 시 기본 이미지 반환
+        return "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=600"
     except Exception as e:
         st.error(f"이미지 검색 중 오류 발생: {e}")
         # 오류 발생 시 기본 이미지 반환
-        return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+        return "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=600"
 
 # 여러 이미지 가져오기
 def get_multiple_images(query, count=6):
@@ -187,25 +220,97 @@ def get_multiple_images(query, count=6):
         if not unsplash_access_key:
             # API 키가 없는 경우 기본 이미지 반환
             st.warning("Unsplash API 키가 설정되지 않아 기본 이미지를 사용합니다.")
-            return ["https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"] * count
+            # 다양한 패션 기본 이미지들
+            default_images = [
+                "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93",
+                "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
+                "https://images.unsplash.com/photo-1445205170230-053b83016050",
+                "https://images.unsplash.com/photo-1479064555552-3ef4979f8908",
+                "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
+                "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f"
+            ]
+            # 필요한 수 만큼 기본 이미지 리스트 확장
+            while len(default_images) < count:
+                default_images += default_images[:count-len(default_images)]
+            return default_images[:count]
         
-        url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}&per_page={count}"
-        response = requests.get(url)
-        data = response.json()
-        
-        if 'results' in data and len(data['results']) > 0:
-            images = [item['urls']['regular'] for item in data['results']]
-            # 결과가 count보다 적으면 필요한 만큼 반복
-            while len(images) < count:
-                images += images[:count-len(images)]
-            return images[:count]
+        # 검색 키워드 정제 (언어 감지 및 영문 처리)
+        if any('\u3131' <= c <= '\u318F' or '\uAC00' <= c <= '\uD7A3' for c in query):  # 한글 감지
+            search_query = f"{query} 패션 스타일 fashion style"
         else:
-            # 검색 결과가 없는 경우 기본 이미지 반환
-            return ["https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"] * count
+            search_query = f"{query} fashion style outfit"
+            
+        # 최대 2번 시도
+        max_attempts = 2
+        for attempt in range(max_attempts):
+            try:
+                url = f"https://api.unsplash.com/search/photos?query={search_query}&client_id={unsplash_access_key}&per_page={count*2}&orientation=portrait"
+                response = requests.get(url)
+                data = response.json()
+                
+                if 'results' in data and len(data['results']) > 0:
+                    # 결과가 있는 경우 이미지 URL 리스트 생성
+                    images = [item['urls']['regular'] for item in data['results']]
+                    # 결과가 count보다 적으면 필요한 만큼 반복
+                    while len(images) < count:
+                        images += images[:count-len(images)]
+                    return images[:count]
+                else:
+                    # 결과가 없으면 키워드를 단순화하여 재시도
+                    if attempt < max_attempts - 1:
+                        # 검색어 단순화
+                        search_query = query + " fashion"
+                        time.sleep(0.5)  # API 호출 간 약간의 지연
+                        continue
+                    else:
+                        # 기본 패션 이미지 리스트 반환
+                        default_images = [
+                            "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93",
+                            "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
+                            "https://images.unsplash.com/photo-1445205170230-053b83016050",
+                            "https://images.unsplash.com/photo-1479064555552-3ef4979f8908",
+                            "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
+                            "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f"
+                        ]
+                        # 필요한 수 만큼 기본 이미지 리스트 확장
+                        while len(default_images) < count:
+                            default_images += default_images[:count-len(default_images)]
+                        return default_images[:count]
+            except Exception as e:
+                if attempt < max_attempts - 1:
+                    time.sleep(0.5)
+                    continue
+                else:
+                    raise e
+                    
+        # 모든 시도 실패 시 기본 이미지 반환
+        default_images = [
+            "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93",
+            "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
+            "https://images.unsplash.com/photo-1445205170230-053b83016050",
+            "https://images.unsplash.com/photo-1479064555552-3ef4979f8908",
+            "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
+            "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f"
+        ]
+        # 필요한 수 만큼 기본 이미지 리스트 확장
+        while len(default_images) < count:
+            default_images += default_images[:count-len(default_images)]
+        return default_images[:count]
     except Exception as e:
         st.error(f"이미지 검색 중 오류 발생: {e}")
         # 오류 발생 시 기본 이미지 반환
-        return ["https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"] * count
+        default_images = [
+            "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93",
+            "https://images.unsplash.com/photo-1490481651871-ab68de25d43d",
+            "https://images.unsplash.com/photo-1445205170230-053b83016050",
+            "https://images.unsplash.com/photo-1479064555552-3ef4979f8908",
+            "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
+            "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f"
+        ]
+        # 필요한 수 만큼 기본 이미지 리스트 확장
+        while len(default_images) < count:
+            default_images += default_images[:count-len(default_images)]
+        return default_images[:count]
 
 # 검색 기능
 if search_option == "Trend & Information":
@@ -215,37 +320,43 @@ if search_option == "Trend & Information":
     def get_fashion_trend_info(query):
         try:
             if not st.session_state.openai_api_key:
-                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
+                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
                 return None
             
             client = OpenAI(api_key=st.session_state.openai_api_key)
             
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "당신은 패션 전문가입니다. 패션 트렌드, 용어, 브랜드에 대한 정보를 상세하게 제공해주세요."},
-                    {"role": "user", "content": f"다음 패션 트렌드에 대해 알려주세요: {query}. 다음 형식으로 응답해주세요: 설명, 스타일링 팁 3개, 연관 키워드 3개"}
-                ]
-            )
+            # 최대 3번 시도
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": "당신은 패션 용어와 트렌드에 대한 설명을 제공하는 패션 전문가입니다. 사용자가 입력한 패션 용어나 트렌드에 대해 자세히 설명해주세요."},
+                            {"role": "user", "content": f"다음 패션 용어/트렌드의 의미와 특징을 알려주세요: {query}"}
+                        ],
+                        temperature=0.7,
+                        max_tokens=500
+                    )
+                    
+                    content = response.choices[0].message.content
+                    if content and len(content.strip()) > 0:
+                        return {"description": content.strip()}
+                    else:
+                        if attempt < max_attempts - 1:
+                            time.sleep(1)  # 잠시 대기 후 재시도
+                            continue
+                        else:
+                            st.error("API에서 빈 응답을 받았습니다. 다른 검색어로 시도해 보세요.")
+                            return None
+                except Exception as e:
+                    if attempt < max_attempts - 1:
+                        time.sleep(1)  # 잠시 대기 후 재시도
+                        continue
+                    else:
+                        raise e
             
-            content = response.choices[0].message.content
-            # 응답을 JSON 형식으로 변환
-            try:
-                # 응답 텍스트를 파싱하여 구조화된 데이터로 변환
-                lines = content.split('\n')
-                description = lines[0]
-                styling_tips = [line.strip('- ') for line in lines[1:4] if line.strip().startswith('-')]
-                related_keywords = [line.strip('- ') for line in lines[4:7] if line.strip().startswith('-')]
-                
-                return {
-                    "description": description,
-                    "styling_tips": styling_tips,
-                    "related_keywords": related_keywords
-                }
-            except Exception as e:
-                st.error(f"응답 파싱 중 오류 발생: {e}")
-                return None
-            
+            return None
         except Exception as e:
             st.error(f"OpenAI API 호출 중 오류 발생: {e}")
             return None
@@ -281,28 +392,28 @@ if search_option == "Trend & Information":
         else:
             with st.spinner("정보를 검색 중입니다..."):
                 try:
+                    # 트렌드/용어 정보 가져오기
                     trend_info = get_fashion_trend_info(search_query)
-                    if trend_info:
+                    if trend_info and "description" in trend_info:
                         # 설명 표시
-                        st.markdown("### 설명")
+                        st.markdown(f"### '{search_query}'에 대한 설명")
                         st.write(trend_info["description"])
                         
-                        # 스타일링 팁 표시
-                        st.markdown("### 스타일링 팁")
-                        for tip in trend_info["styling_tips"]:
-                            st.write(f"- {tip}")
-                        
-                        # 연관 키워드 표시
-                        st.markdown("### 연관 키워드")
-                        for keyword in trend_info["related_keywords"]:
-                            st.markdown(f'<span class="related-keyword">{keyword}</span>', unsafe_allow_html=True)
+                        # 구분선 추가
+                        st.markdown("---")
                         
                         # 이미지 표시
-                        image_url = get_image_url(search_query)
+                        st.markdown("### 관련 이미지")
+                        # 이미지 검색 키워드 정제
+                        image_search_query = f"{search_query} fashion"
+                        image_url = get_image_url(image_search_query)
                         if image_url:
                             st.image(image_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
+                    else:
+                        st.error("검색 결과를 가져오지 못했습니다. 다른 검색어로 시도해 보세요.")
                 except Exception as e:
-                    st.error(f"정보 표시 중 오류 발생: {e}")
+                    st.error(f"검색 중 오류 발생: {e}")
+                    st.error("잠시 후 다시 시도해 주세요.")
 elif search_option == "Brands":
     # 패션 브랜드 정보 문구와 드롭다운 대신 검색창 추가
     search_query = st.text_input("", placeholder="브랜드명을 입력하세요 (예: 구찌, 프라다, 나이키 등)")
@@ -378,8 +489,13 @@ else:  # 스타일링 검색
     if style_query:
         with st.spinner("스타일링 이미지를 검색 중입니다..."):
             try:
+                # 스타일 검색 키워드 최적화
+                if any('\u3131' <= c <= '\u318F' or '\uAC00' <= c <= '\uD7A3' for c in style_query):  # 한글 감지
+                    search_term = f"{style_query} 패션 스타일 코디"
+                else:
+                    search_term = f"{style_query} fashion style outfit"
+                
                 # 여러 이미지 가져오기
-                search_term = f"{style_query} fashion style outfit"
                 images = get_multiple_images(search_term)
                 
                 if images:
@@ -398,5 +514,8 @@ else:  # 스타일링 검색
                     이미지 제공: Unsplash
                     </div>
                     """, unsafe_allow_html=True)
+                else:
+                    st.error("이미지를 찾을 수 없습니다. 다른 검색어로 시도해 보세요.")
             except Exception as e:
-                st.error(f"이미지 검색 중 오류 발생: {e}") 
+                st.error(f"이미지 검색 중 오류 발생: {e}")
+                st.error("잠시 후 다시 시도해 주세요.") 
