@@ -132,6 +132,7 @@ st.markdown("""
         scrollbar-color: #888 #f1f1f1;
         width: 100%;
         position: relative;
+        scroll-snap-type: x mandatory;
     }
     .news-container::-webkit-scrollbar {
         height: 4px;
@@ -148,16 +149,13 @@ st.markdown("""
         background: #555;
     }
     .news-card {
-        display: inline-block;
         background-color: white;
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-        min-width: 200px;
-        max-width: 200px;
-        flex: 0 0 auto;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         margin: 5px 0;
+        height: 100%;
     }
     .news-card:hover {
         transform: translateY(-3px);
@@ -203,7 +201,22 @@ st.markdown("""
         letter-spacing: 1px;
         color: #333;
         margin-bottom: 10px;
-        text-align: center;
+        padding-top: 10px;
+    }
+
+    /* 네비게이션 버튼 스타일 */
+    .stButton button {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-weight: bold;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        margin-top: 15px;
     }
 
     /* 스타일링 검색 화면의 안내 문구 스타일 추가 */
@@ -642,7 +655,19 @@ if search_option == "Trend & Information":
     # 패션 뉴스 섹션 추가 (Trend & Information 탭에서만 표시)
     st.markdown("---")
     st.markdown('<div class="news-section">', unsafe_allow_html=True)
-    st.markdown('<div class="trend-news-title">TREND NEWS</div>', unsafe_allow_html=True)
+    
+    # 타이틀과 스크롤 버튼을 나란히 배치
+    col_title, col_buttons = st.columns([4, 1])
+    with col_title:
+        st.markdown('<div class="trend-news-title">TREND NEWS</div>', unsafe_allow_html=True)
+    with col_buttons:
+        cols_btn = st.columns(2)
+        with cols_btn[0]:
+            if st.button("◀", key="prev_btn", help="이전 뉴스 보기"):
+                st.session_state.news_scroll_left = True
+        with cols_btn[1]:
+            if st.button("▶", key="next_btn", help="다음 뉴스 보기"):
+                st.session_state.news_scroll_right = True
 
     # 패션 뉴스 데이터 (실제 패션 관련 뉴스)
     fashion_news = [
@@ -704,25 +729,38 @@ if search_option == "Trend & Information":
         }
     ]
 
-    # 뉴스 카드 표시 - HTML 구조 개선
-    st.markdown('<div class="news-container">', unsafe_allow_html=True)
-
-    news_html = ""
-    for news in fashion_news:
-        news_html += f"""
-        <div class="news-card">
-            <img src="{news['image']}" class="news-image" alt="{news['title']}">
-            <div class="news-content">
-                <div class="news-category">{news['category']}</div>
-                <div class="news-title">{news['title']}</div>
-                <div class="news-date">{news['date']}</div>
-                <div class="news-author">by {news['author']}</div>
+    # 뉴스 스크롤 인덱스 관리
+    if 'news_start_idx' not in st.session_state:
+        st.session_state.news_start_idx = 0
+    
+    # 버튼 클릭 시 스크롤 처리
+    if 'news_scroll_left' in st.session_state and st.session_state.news_scroll_left:
+        st.session_state.news_start_idx = max(0, st.session_state.news_start_idx - 4)
+        st.session_state.news_scroll_left = False
+    
+    if 'news_scroll_right' in st.session_state and st.session_state.news_scroll_right:
+        st.session_state.news_start_idx = min(len(fashion_news) - 4, st.session_state.news_start_idx + 4)
+        st.session_state.news_scroll_right = False
+    
+    # 현재 보이는 뉴스 슬라이스 생성
+    visible_news = fashion_news[st.session_state.news_start_idx:st.session_state.news_start_idx + 4]
+    
+    # 뉴스 카드 표시 - 컬럼 사용
+    news_cols = st.columns(4)
+    for i, news in enumerate(visible_news):
+        with news_cols[i]:
+            st.markdown(f"""
+            <div class="news-card" style="min-width: 100%; max-width: 100%;">
+                <img src="{news['image']}" class="news-image" alt="{news['title']}">
+                <div class="news-content">
+                    <div class="news-category">{news['category']}</div>
+                    <div class="news-title">{news['title']}</div>
+                    <div class="news-date">{news['date']}</div>
+                    <div class="news-author">by {news['author']}</div>
+                </div>
             </div>
-        </div>
-        """
-
-    st.markdown(news_html, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 푸터 추가 (모든 탭에서 공통으로 표시)
