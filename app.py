@@ -22,7 +22,8 @@ load_dotenv()
 st.set_page_config(
     page_title="FASHION TREND-SETTER",
     page_icon=None,
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # 세션 상태 초기화
@@ -557,10 +558,19 @@ else:
         color: #495057;
         font-weight: 500;
         margin-bottom: 20px;
+        border-radius: 4px !important; /* 동그라미 제거, 각진 모서리로 변경 */
+        width: auto !important; /* 너비 자동 조절 */
+        height: auto !important; /* 높이 자동 조절 */
+        padding: 6px 12px !important; /* 좌우 패딩 추가 */
     }
     div.stButton > button:first-child:hover {
         background-color: #e9ecef;
         border-color: #FF0000 !important;
+    }
+    div.stButton > button:first-child > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
     }
     </style>
     """, unsafe_allow_html=True)
