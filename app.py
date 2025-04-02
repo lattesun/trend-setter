@@ -566,7 +566,7 @@ else:
     """, unsafe_allow_html=True)
     
     # 뒤로가기 버튼
-    if st.button("← 메인으로 돌아가기"):
+    if st.button("← MAIN PAGE"):
         st.session_state.page = "main"
         st.rerun()
     
