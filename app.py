@@ -300,7 +300,7 @@ if search_option == "Trend & Information":
                         # 이미지 표시
                         image_url = get_image_url(search_query)
                         if image_url:
-                            st.image(image_url, caption=f"{search_query} 관련 이미지", use_column_width=True)
+                            st.image(image_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
                 except Exception as e:
                     st.error(f"정보 표시 중 오류 발생: {e}")
 elif search_option == "Brands":
@@ -391,7 +391,7 @@ else:  # 스타일링 검색
                         for j in range(3):
                             if i+j < len(images):
                                 with cols[j]:
-                                    st.image(images[i+j], use_column_width=True)
+                                    st.image(images[i+j], use_container_width=True)
                     
                     st.markdown("""
                     <div class='footer-tiny' style='text-align: center; margin-top: 20px;'>
