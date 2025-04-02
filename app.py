@@ -113,22 +113,28 @@ st.markdown("""
     }
     
     /* 패션 뉴스 섹션 스타일 */
+    .news-section {
+        padding: 10px 0;
+        margin: 20px 0;
+        position: relative;
+    }
     .news-container {
         display: flex;
         flex-wrap: nowrap;
-        gap: 20px;
-        margin: 30px 0;
+        gap: 12px;
+        margin: 20px 0;
         overflow-x: auto;
-        padding: 10px 0 25px 0;
+        padding: 10px 0 20px 0;
         white-space: nowrap;
         -webkit-overflow-scrolling: touch;
         scroll-behavior: smooth;
         scrollbar-width: thin;
         scrollbar-color: #888 #f1f1f1;
         width: 100%;
+        position: relative;
     }
     .news-container::-webkit-scrollbar {
-        height: 6px;
+        height: 4px;
     }
     .news-container::-webkit-scrollbar-track {
         background: #f1f1f1;
@@ -144,48 +150,48 @@ st.markdown("""
     .news-card {
         display: inline-block;
         background-color: white;
-        border-radius: 10px;
+        border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        min-width: 250px;
-        max-width: 250px;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+        min-width: 200px;
+        max-width: 200px;
         flex: 0 0 auto;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         margin: 5px 0;
     }
     .news-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
     }
     .news-image {
         width: 100%;
-        height: 150px;
+        height: 120px;
         object-fit: cover;
     }
     .news-content {
-        padding: 12px;
+        padding: 10px;
     }
     .news-category {
-        font-size: 11px;
+        font-size: 10px;
         color: #6c757d;
-        margin-bottom: 3px;
+        margin-bottom: 2px;
         font-weight: 600;
     }
     .news-title {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 700;
-        margin-bottom: 8px;
-        line-height: 1.3;
-        height: 55px;
+        margin-bottom: 6px;
+        line-height: 1.2;
+        height: 45px;
         overflow: hidden;
     }
     .news-date {
-        font-size: 11px;
+        font-size: 10px;
         color: #6c757d;
-        margin-bottom: 3px;
+        margin-bottom: 2px;
     }
     .news-author {
-        font-size: 11px;
+        font-size: 10px;
         color: #6c757d;
     }
 
@@ -198,6 +204,13 @@ st.markdown("""
         color: #333;
         margin-bottom: 10px;
         text-align: center;
+    }
+
+    /* 스타일링 검색 화면의 안내 문구 스타일 추가 */
+    .styling-guide {
+        font-size: 13px;
+        color: #6c757d;
+        margin: 0 0 5px 2px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -592,11 +605,7 @@ elif search_option == "Brands":
                     st.error(f"오류 발생: {e}")
                     st.error("브랜드 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
 else:  # 스타일링 검색
-    st.markdown("""
-    <div class='card'>
-    <p>원하는 패션 스타일, 아이템, 색상 등을 검색하여 관련 이미지를 확인해보세요.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("<p class='styling-guide'>원하는 패션 스타일, 아이템, 색상 등을 검색하여 관련 이미지를 확인해보세요.</p>", unsafe_allow_html=True)
     
     style_query = st.text_input("", placeholder="검색어를 입력하세요 (예: 미니멀 스타일링, 블루 코트, 캐주얼 룩 등)")
     
@@ -628,63 +637,95 @@ else:  # 스타일링 검색
                 st.error(f"이미지 검색 중 오류 발생: {e}")
                 st.error("잠시 후 다시 시도해 주세요.")
 
-# 패션 뉴스 섹션 추가 (모든 탭에서 공통으로 표시)
-st.markdown("---")
-st.markdown('<div class="trend-news-title">TREND NEWS</div>', unsafe_allow_html=True)
+# 패션 뉴스 섹션과 푸터 부분 전체 수정
+if search_option == "Trend & Information":
+    # 패션 뉴스 섹션 추가 (Trend & Information 탭에서만 표시)
+    st.markdown("---")
+    st.markdown('<div class="news-section">', unsafe_allow_html=True)
+    st.markdown('<div class="trend-news-title">TREND NEWS</div>', unsafe_allow_html=True)
 
-# 패션 뉴스 데이터 (실제로는 API나 데이터베이스에서 가져올 수 있음)
-fashion_news = [
-    {
-        "category": "패션 아이템",
-        "title": "올여름을 위해 반드시 준비해야 할 이 원피스",
-        "date": "2025.03.28",
-        "author": "김현유, Melisa Vargas",
-        "image": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b"
-    },
-    {
-        "category": "패션 아이템",
-        "title": "다른 하이는 처다도 안 볼 2025 반바지 트렌드",
-        "date": "2025.03.25",
-        "author": "이소미",
-        "image": "https://images.unsplash.com/photo-1475180098004-ca77a66827be"
-    },
-    {
-        "category": "패션 트렌드",
-        "title": "젖어진 청바지의 부담 없는 귀환",
-        "date": "2025.03.28",
-        "author": "이소미, Alexandre Marain",
-        "image": "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8"
-    },
-    {
-        "category": "패션 아이템",
-        "title": "지금 샵들 신기 전에 실컷 즐겨야 할 신발",
-        "date": "2025.03.26",
-        "author": "이소미, Daisy Jones",
-        "image": "https://images.unsplash.com/photo-1560243563-062bfc001d68"
-    }
-]
+    # 패션 뉴스 데이터 (실제 패션 관련 뉴스)
+    fashion_news = [
+        {
+            "category": "트렌드",
+            "title": "2024 S/S 서울패션위크에서 주목받은 스트리트 스타일",
+            "date": "2024.05.14",
+            "author": "김승혜",
+            "image": "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500"
+        },
+        {
+            "category": "브랜드",
+            "title": "메종 마르지엘라, 가을 시즌 새로운 타비 부츠 컬렉션 공개",
+            "date": "2024.05.12",
+            "author": "이성민",
+            "image": "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=500"
+        },
+        {
+            "category": "스타일",
+            "title": "Y2K 패션의 귀환, 2000년대 초 트렌드가 다시 인기",
+            "date": "2024.05.10",
+            "author": "박지현",
+            "image": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500"
+        },
+        {
+            "category": "지속가능성",
+            "title": "친환경 패션 브랜드의 부상, 소비자들의 윤리적 소비 증가",
+            "date": "2024.05.08",
+            "author": "최윤서",
+            "image": "https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500"
+        },
+        {
+            "category": "액세서리",
+            "title": "2024 여름 시즌 주목할 만한 패션 액세서리 트렌드",
+            "date": "2024.05.05",
+            "author": "정민지",
+            "image": "https://images.unsplash.com/photo-1589782182703-2aaa69037b5b?w=500"
+        },
+        {
+            "category": "뷰티",
+            "title": "패션과 메이크업의 조화, 이번 시즌 런웨이에서 주목받은 뷰티 룩",
+            "date": "2024.05.03",
+            "author": "한소연",
+            "image": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500"
+        },
+        {
+            "category": "셀럽",
+            "title": "인플루언서들이 선택한 2024 여름 필수 아이템",
+            "date": "2024.04.30",
+            "author": "김태희",
+            "image": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=500"
+        },
+        {
+            "category": "콜라보",
+            "title": "스트리트 브랜드와 럭셔리 하우스의 놀라운 협업 소식",
+            "date": "2024.04.28",
+            "author": "이준호",
+            "image": "https://images.unsplash.com/photo-1445205170230-053b83016050?w=500"
+        }
+    ]
 
-# 뉴스 카드 4개 표시 - HTML 구조 개선
-st.markdown('<div class="news-container">', unsafe_allow_html=True)
+    # 뉴스 카드 표시 - HTML 구조 개선
+    st.markdown('<div class="news-container">', unsafe_allow_html=True)
 
-news_html = ""
-for news in fashion_news:
-    news_html += f"""
-    <div class="news-card">
-        <img src="{news['image']}" class="news-image" alt="{news['title']}">
-        <div class="news-content">
-            <div class="news-category">{news['category']}</div>
-            <div class="news-title">{news['title']}</div>
-            <div class="news-date">{news['date']}</div>
-            <div class="news-author">by {news['author']}</div>
+    news_html = ""
+    for news in fashion_news:
+        news_html += f"""
+        <div class="news-card">
+            <img src="{news['image']}" class="news-image" alt="{news['title']}">
+            <div class="news-content">
+                <div class="news-category">{news['category']}</div>
+                <div class="news-title">{news['title']}</div>
+                <div class="news-date">{news['date']}</div>
+                <div class="news-author">by {news['author']}</div>
+            </div>
         </div>
-    </div>
-    """
+        """
 
-st.markdown(news_html, unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(news_html, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# 푸터 추가
+# 푸터 추가 (모든 탭에서 공통으로 표시)
 st.markdown("---")
 st.markdown("""
 <div class="footer-tiny" style="text-align: center; margin-top: 20px;">
