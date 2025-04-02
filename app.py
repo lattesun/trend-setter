@@ -129,7 +129,7 @@ with st.sidebar:
     st.markdown('<div class="all-things-fashion">All Things Fashion</div>', unsafe_allow_html=True)
     search_option = st.radio(
         "",
-        ["Trend & Information", "Brands"]
+        ["Trend & Information", "Brands", "Styling Search"]
     )
     search_type = "패션 트렌드"  # 트렌드 검색 기본값
     
@@ -153,35 +153,64 @@ with st.sidebar:
 st.title("FASHION TREND-SETTER")
 if search_option == "Trend & Information":
     st.markdown("### 패션 트렌드/용어")
-else:
+elif search_option == "Brands":
     st.markdown("### 패션 브랜드 알아보기")
+else:
+    st.markdown("### 스타일링 검색")
+
+# Unsplash API를 통한 이미지 검색 (무료 API 사용)
+def get_image_url(query):
+    try:
+        unsplash_access_key = st.session_state.unsplash_api_key
+        if not unsplash_access_key:
+            # API 키가 없는 경우 기본 이미지 반환
+            st.warning("Unsplash API 키가 설정되지 않아 기본 이미지를 사용합니다.")
+            return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+        
+        url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}"
+        response = requests.get(url)
+        data = response.json()
+        if 'results' in data and len(data['results']) > 0:
+            return data['results'][0]['urls']['regular']
+        else:
+            # 검색 결과가 없는 경우 기본 이미지 반환
+            return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+    except Exception as e:
+        st.error(f"이미지 검색 중 오류 발생: {e}")
+        # 오류 발생 시 기본 이미지 반환
+        return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+
+# 여러 이미지 가져오기
+def get_multiple_images(query, count=6):
+    try:
+        unsplash_access_key = st.session_state.unsplash_api_key
+        if not unsplash_access_key:
+            # API 키가 없는 경우 기본 이미지 반환
+            st.warning("Unsplash API 키가 설정되지 않아 기본 이미지를 사용합니다.")
+            return ["https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"] * count
+        
+        url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}&per_page={count}"
+        response = requests.get(url)
+        data = response.json()
+        
+        if 'results' in data and len(data['results']) > 0:
+            images = [item['urls']['regular'] for item in data['results']]
+            # 결과가 count보다 적으면 필요한 만큼 반복
+            while len(images) < count:
+                images += images[:count-len(images)]
+            return images[:count]
+        else:
+            # 검색 결과가 없는 경우 기본 이미지 반환
+            return ["https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"] * count
+    except Exception as e:
+        st.error(f"이미지 검색 중 오류 발생: {e}")
+        # 오류 발생 시 기본 이미지 반환
+        return ["https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"] * count
 
 # 검색 기능
 if search_option == "Trend & Information":
     search_query = st.text_input("", placeholder="(예: Y2K 패션, 아방가르드, 하이엔드 등)")
     
-    # Unsplash API를 통한 이미지 검색 (무료 API 사용)
-    def get_image_url(query):
-        try:
-            unsplash_access_key = st.session_state.unsplash_api_key
-            if not unsplash_access_key:
-                # API 키가 없는 경우 기본 이미지 반환
-                st.warning("Unsplash API 키가 설정되지 않아 기본 이미지를 사용합니다.")
-                return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
-            
-            url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}"
-            response = requests.get(url)
-            data = response.json()
-            if 'results' in data and len(data['results']) > 0:
-                return data['results'][0]['urls']['regular']
-            else:
-                # 검색 결과가 없는 경우 기본 이미지 반환
-                return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
-        except Exception as e:
-            st.error(f"이미지 검색 중 오류 발생: {e}")
-            # 오류 발생 시 기본 이미지 반환
-            return "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
-
     # GPT를 통한 트렌드 정보 검색
     def get_fashion_trend_info(query):
         try:
@@ -274,7 +303,7 @@ if search_option == "Trend & Information":
                             st.image(image_url, caption=f"{search_query} 관련 이미지", use_column_width=True)
                 except Exception as e:
                     st.error(f"정보 표시 중 오류 발생: {e}")
-else:  # 브랜드 검색
+elif search_option == "Brands":
     # 패션 브랜드 정보 문구와 드롭다운 대신 검색창 추가
     search_query = st.text_input("", placeholder="브랜드명을 입력하세요 (예: 구찌, 프라다, 나이키 등)")
     
@@ -336,4 +365,38 @@ else:  # 브랜드 검색
                 
                 except Exception as e:
                     st.error(f"오류 발생: {e}")
-                    st.error("브랜드 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.") 
+                    st.error("브랜드 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
+else:  # 스타일링 검색
+    st.markdown("""
+    <div class='card'>
+    <p>원하는 패션 스타일, 아이템, 색상 등을 검색하여 관련 이미지를 확인해보세요.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    style_query = st.text_input("", placeholder="검색어를 입력하세요 (예: 미니멀 스타일링, 블루 코트, 캐주얼 룩 등)")
+    
+    if style_query:
+        with st.spinner("스타일링 이미지를 검색 중입니다..."):
+            try:
+                # 여러 이미지 가져오기
+                search_term = f"{style_query} fashion style outfit"
+                images = get_multiple_images(search_term)
+                
+                if images:
+                    st.markdown(f"### '{style_query}' 스타일링 이미지")
+                    
+                    # 이미지를 3개씩 2행으로 표시
+                    for i in range(0, len(images), 3):
+                        cols = st.columns(3)
+                        for j in range(3):
+                            if i+j < len(images):
+                                with cols[j]:
+                                    st.image(images[i+j], use_column_width=True)
+                    
+                    st.markdown("""
+                    <div class='footer-tiny' style='text-align: center; margin-top: 20px;'>
+                    이미지 제공: Unsplash
+                    </div>
+                    """, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"이미지 검색 중 오류 발생: {e}") 
