@@ -115,16 +115,20 @@ st.markdown("""
     /* 패션 뉴스 섹션 스타일 */
     .news-container {
         display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        margin-top: 40px;
+        flex-wrap: nowrap;
+        gap: 15px;
+        margin-top: 30px;
+        overflow-x: auto;
+        padding-bottom: 15px;
     }
     .news-card {
         background-color: white;
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        width: calc(25% - 15px);
+        min-width: 220px;
+        max-width: 220px;
+        flex: 0 0 auto;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     .news-card:hover {
@@ -133,34 +137,45 @@ st.markdown("""
     }
     .news-image {
         width: 100%;
-        height: 200px;
+        height: 150px;
         object-fit: cover;
     }
     .news-content {
-        padding: 15px;
+        padding: 12px;
     }
     .news-category {
-        font-size: 12px;
+        font-size: 11px;
         color: #6c757d;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
         font-weight: 600;
     }
     .news-title {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         line-height: 1.3;
-        height: 60px;
+        height: 55px;
         overflow: hidden;
     }
     .news-date {
-        font-size: 12px;
+        font-size: 11px;
         color: #6c757d;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
     }
     .news-author {
-        font-size: 12px;
+        font-size: 11px;
         color: #6c757d;
+    }
+
+    /* TREND NEWS 제목 스타일 */
+    .trend-news-title {
+        font-size: 1.8em;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #333;
+        margin-bottom: 10px;
+        text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -593,7 +608,7 @@ else:  # 스타일링 검색
 
 # 패션 뉴스 섹션 추가 (모든 탭에서 공통으로 표시)
 st.markdown("---")
-st.markdown("## 최신 패션 트렌드 뉴스")
+st.markdown('<div class="trend-news-title">TREND NEWS</div>', unsafe_allow_html=True)
 
 # 패션 뉴스 데이터 (실제로는 API나 데이터베이스에서 가져올 수 있음)
 fashion_news = [
