@@ -9,6 +9,13 @@ from dotenv import load_dotenv
 import json
 import time
 import datetime
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import io
+import base64
+import random
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -225,6 +232,42 @@ st.markdown("""
         color: #6c757d;
         margin: 0 0 5px 2px;
     }
+
+    /* 네비게이션 버튼 스타일 */
+    .nav-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        z-index: 10;
+        border: none;
+    }
+    .nav-prev {
+        left: -20px;
+    }
+    .nav-next {
+        right: -20px;
+    }
+    .news-cols-container {
+        position: relative;
+        padding: 0 25px;
+    }
+    .stButton > button {
+        font-weight: bold;
+    }
+
+    /* 메인 컨텐츠 섹션 스타일 */
+    .main-content {
+        margin-top: 30px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -265,14 +308,370 @@ with st.sidebar:
     st.markdown("<div class='footer-tiny'>이 앱은 OpenAI API를 사용하여 패션 트렌드와 용어에 대한 정보를 제공합니다.<br>트렌드 이미지는 Unsplash API를 통해 제공됩니다.</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
+# 패션 뉴스 섹션 함수화 (모든 페이지 상단에 표시)
+def display_trend_news():
+    # TREND NEWS 타이틀과 스타일 적용
+    st.markdown("""
+    <div class="trend-news-title">TREND NEWS</div>
+    """, unsafe_allow_html=True)
+    
+    # 세션 상태에 뉴스 인덱스가 없으면 초기화
+    if 'news_index' not in st.session_state:
+        st.session_state.news_index = 0
+    
+    # 패션 뉴스 목록 (실제로는 API 또는 데이터베이스에서 가져올 수 있음)
+    fashion_news = [
+        {
+            "category": "트렌드",
+            "title": "2025 S/S 컬렉션에서 주목해야 할 5가지 트렌드",
+            "date": "2025.03.15",
+            "author": "패션 에디터",
+            "image": "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=600"
+        },
+        {
+            "category": "컬렉션",
+            "title": "파리 패션위크 하이라이트: 샤넬과 디올의 새로운 비전",
+            "date": "2025.03.12",
+            "author": "패션 저널리스트",
+            "image": "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600"
+        },
+        {
+            "category": "지속가능성",
+            "title": "친환경 패션의 미래: 리사이클 소재의 혁신",
+            "date": "2025.03.10",
+            "author": "환경 전문가",
+            "image": "https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=600"
+        },
+        {
+            "category": "스트리트 패션",
+            "title": "서울 스트리트 스타일: Z세대가 이끄는 새로운 트렌드",
+            "date": "2025.03.08",
+            "author": "스트리트 포토그래퍼",
+            "image": "https://images.unsplash.com/photo-1600950207944-0d63e8edbc3f?w=600"
+        },
+        {
+            "category": "디자이너",
+            "title": "신진 디자이너 특집: 미래의 패션을 선도할 10인",
+            "date": "2025.03.05",
+            "author": "패션 큐레이터",
+            "image": "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600"
+        },
+        {
+            "category": "컬래버레이션",
+            "title": "럭셔리 브랜드와 아티스트의 만남: 경계를 허무는 협업",
+            "date": "2025.03.03",
+            "author": "아트 디렉터",
+            "image": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600"
+        },
+        {
+            "category": "기술",
+            "title": "패션테크의 진화: AI가 디자인하는 맞춤형 의류",
+            "date": "2025.03.01",
+            "author": "테크 애널리스트",
+            "image": "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=600"
+        },
+        {
+            "category": "액세서리",
+            "title": "2025년 주목해야 할 액세서리 트렌드",
+            "date": "2025.02.28",
+            "author": "스타일리스트",
+            "image": "https://images.unsplash.com/photo-1611085583191-a3b181a88401?w=600"
+        },
+        {
+            "category": "뷰티",
+            "title": "런웨이에서 영감받은 메이크업 트렌드",
+            "date": "2025.02.25",
+            "author": "뷰티 에디터",
+            "image": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600"
+        },
+        {
+            "category": "이벤트",
+            "title": "2025 메트 갈라: 패션의 밤을 빛낸 스타들",
+            "date": "2025.02.20",
+            "author": "연예 기자",
+            "image": "https://images.unsplash.com/photo-1533928298208-27ff66555d8d?w=600"
+        }
+    ]
+    
+    # 이전/다음 버튼 핸들러
+    def prev_news():
+        if st.session_state.news_index > 0:
+            st.session_state.news_index -= 4
+            
+    def next_news():
+        if st.session_state.news_index + 4 < len(fashion_news):
+            st.session_state.news_index += 4
+    
+    # 컨테이너 생성
+    with st.container():
+        # 뉴스 카드를 표시할 레이아웃
+        st.markdown('<div class="news-cols-container">', unsafe_allow_html=True)
+        
+        # 이전 버튼 (인덱스가 0이면 비활성화)
+        prev_disabled = "disabled" if st.session_state.news_index == 0 else ""
+        st.markdown(f"""
+        <button class="nav-button nav-prev" onclick="this.blur(); setTimeout(function(){{document.querySelector('button[kind=\"primaryFormSubmit\"]').click();}}, 100);" {prev_disabled}>◀</button>
+        """, unsafe_allow_html=True)
+        
+        # 현재 인덱스부터 4개의 뉴스 카드 표시
+        cols = st.columns(4)
+        end_idx = min(st.session_state.news_index + 4, len(fashion_news))
+        
+        for i, col in enumerate(cols):
+            idx = st.session_state.news_index + i
+            if idx < end_idx and idx < len(fashion_news):
+                news = fashion_news[idx]
+                with col:
+                    st.markdown(f"""
+                    <div class="news-card">
+                        <img src="{news['image']}" alt="{news['title']}">
+                        <div class="news-content">
+                            <div class="news-category">{news['category']}</div>
+                            <div class="news-title">{news['title']}</div>
+                            <div class="news-info">{news['date']} | {news['author']}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # 다음 버튼 (마지막 인덱스면 비활성화)
+        next_disabled = "disabled" if st.session_state.news_index + 4 >= len(fashion_news) else ""
+        st.markdown(f"""
+        <button class="nav-button nav-next" onclick="this.blur(); setTimeout(function(){{document.querySelector('button[kind=\"primaryFormSubmit\"]').click();}}, 100);" {next_disabled}>▶</button>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # 버튼 클릭 처리를 위한 폼
+    with st.form(key="news_navigation_form"):
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.form_submit_button("이전", on_click=prev_news, help="이전 뉴스 보기"):
+                pass
+        with col2:
+            if st.form_submit_button("다음", on_click=next_news, help="다음 뉴스 보기"):
+                pass
+
 # 타이틀
 st.title("FASHION TREND-SETTER")
+
+# 항상 먼저 TREND NEWS 표시
+display_trend_news()
+
+# 메인 컨텐츠 구분선
+st.markdown("<hr/>", unsafe_allow_html=True)
+st.markdown('<div class="main-content">', unsafe_allow_html=True)
+
+# 메인 컨텐츠 표시
 if search_option == "Trend & Information":
     st.markdown("### 패션 트렌드/용어")
+    search_query = st.text_input("", placeholder="(예: Y2K 패션, 아방가르드, 하이엔드 등)", key="trend_search")
+    
+    # GPT를 통한 트렌드 정보 검색
+    def get_fashion_trend_info(query):
+        try:
+            if not st.session_state.openai_api_key:
+                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
+                return None
+            
+            client = OpenAI(api_key=st.session_state.openai_api_key)
+            
+            # 최대 3번 시도
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": "당신은 패션 용어와 트렌드에 대한 설명을 제공하는 패션 전문가입니다. 사용자가 입력한 패션 용어나 트렌드에 대해 자세히 설명해주세요."},
+                            {"role": "user", "content": f"다음 패션 용어/트렌드의 의미와 특징을 알려주세요: {query}"}
+                        ],
+                        temperature=0.7,
+                        max_tokens=500
+                    )
+                    
+                    content = response.choices[0].message.content
+                    if content and len(content.strip()) > 0:
+                        return {"description": content.strip()}
+                    else:
+                        if attempt < max_attempts - 1:
+                            time.sleep(1)  # 잠시 대기 후 재시도
+                            continue
+                        else:
+                            st.error("API에서 빈 응답을 받았습니다. 다른 검색어로 시도해 보세요.")
+                            return None
+                except Exception as e:
+                    if attempt < max_attempts - 1:
+                        time.sleep(1)  # 잠시 대기 후 재시도
+                        continue
+                    else:
+                        raise e
+            
+            return None
+        except Exception as e:
+            st.error(f"OpenAI API 호출 중 오류 발생: {e}")
+            return None
+
+    # 패션 용어/브랜드 정보 검색
+    def get_fashion_term_info(query):
+        try:
+            # API 키 확인
+            if not st.session_state.openai_api_key:
+                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
+                return None
+            
+            # OpenAI 클라이언트 초기화
+            client = OpenAI(api_key=st.session_state.openai_api_key)
+            
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "당신은 패션 전문가입니다. 패션 용어와 브랜드에 대한 상세한 정보를 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
+                    {"role": "user", "content": f"다음 패션 용어 또는 브랜드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"definition\": \"정의\", \"examples\": [\"예시1\", \"예시2\"], \"brands\": [\"브랜드1\", \"브랜드2\"], \"related_terms\": [\"관련용어1\", \"관련용어2\"]}}"}
+                ],
+                response_format={"type": "json_object"}
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            st.error(f"OpenAI API 호출 중 오류 발생: {e}")
+            return None
+
+    # 검색 실행
+    if search_query:
+        if not st.session_state.openai_api_key:
+            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
+        else:
+            with st.spinner("정보를 검색 중입니다..."):
+                try:
+                    # 트렌드/용어 정보 가져오기
+                    trend_info = get_fashion_trend_info(search_query)
+                    if trend_info and "description" in trend_info:
+                        # 설명 표시 ('에 대한 설명' 문구 제거)
+                        st.markdown(f"### '{search_query}'")
+                        st.write(trend_info["description"])
+                        
+                        # 구분선 추가
+                        st.markdown("---")
+                        
+                        # 이미지 표시
+                        st.markdown("### 관련 이미지")
+                        # 이미지 검색 키워드 정제
+                        image_url = get_image_url(search_query)
+                        if image_url:
+                            st.image(image_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
+                    else:
+                        st.error("검색 결과를 가져오지 못했습니다. 다른 검색어로 시도해 보세요.")
+                except Exception as e:
+                    st.error(f"검색 중 오류 발생: {e}")
+                    st.error("잠시 후 다시 시도해 주세요.")
+
 elif search_option == "Brands":
     st.markdown("### 패션 브랜드 알아보기")
-else:
+    search_query = st.text_input("", placeholder="브랜드명을 입력하세요 (예: 구찌, 프라다, 나이키 등)", key="brand_search")
+    
+    if search_query:
+        # API 키 확인
+        if not st.session_state.openai_api_key:
+            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
+        else:
+            with st.spinner("브랜드 정보를 검색 중입니다..."):
+                try:
+                    # 브랜드 이름 정리
+                    brand_name = search_query
+                    
+                    # 브랜드 정보 가져오기
+                    import json
+                    brand_info_str = get_fashion_term_info(brand_name)
+                    if brand_info_str:
+                        try:
+                            brand_info = json.loads(brand_info_str)
+                            
+                            # 필수 키가 있는지 확인
+                            required_keys = ["definition", "examples", "brands", "related_terms"]
+                            for key in required_keys:
+                                if key not in brand_info:
+                                    st.error(f"API 응답에 필요한 '{key}' 정보가 없습니다. 다시 시도해 주세요.")
+                                    raise KeyError(f"Missing required key: {key}")
+                            
+                            # 이미지 URL 가져오기 - 브랜드 특화 검색어 사용
+                            specific_query = f"{brand_name} brand logo fashion"
+                            image_url = get_image_url(specific_query)
+                            
+                            # 브랜드 정보 표시
+                            col1, col2 = st.columns([1, 1])
+                            
+                            with col1:
+                                st.markdown(f"<div class='card'><h2>{brand_name}</h2>", unsafe_allow_html=True)
+                                st.markdown(f"<p>{brand_info['definition']}</p></div>", unsafe_allow_html=True)
+                                
+                                st.markdown("<div class='card'><h3>대표 제품/스타일</h3>", unsafe_allow_html=True)
+                                for example in brand_info['examples']:
+                                    st.markdown(f"- {example}")
+                                st.markdown("</div>", unsafe_allow_html=True)
+                                
+                                st.markdown("<div class='card'><h3>관련 용어</h3>", unsafe_allow_html=True)
+                                term_html = ""
+                                for term in brand_info['related_terms']:
+                                    term_html += f"<span class='related-keyword'>{term}</span>"
+                                st.markdown(term_html, unsafe_allow_html=True)
+                                st.markdown("</div>", unsafe_allow_html=True)
+                            
+                            with col2:
+                                st.markdown("<div class='card'>", unsafe_allow_html=True)
+                                st.image(image_url, caption=f"{brand_name} 이미지", use_container_width=True)
+                                st.markdown("</div>", unsafe_allow_html=True)
+                        except json.JSONDecodeError as e:
+                            st.error(f"JSON 파싱 오류: {e}")
+                            st.error("API 응답이 올바른 JSON 형식이 아닙니다. 다시 시도해 주세요.")
+                        except KeyError as e:
+                            st.error(f"필수 데이터 누락: {e}")
+                
+                except Exception as e:
+                    st.error(f"오류 발생: {e}")
+                    st.error("브랜드 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
+
+else:  # 스타일링 검색
     st.markdown("### 스타일링 검색")
+    st.markdown("<p class='styling-guide'>원하는 패션 스타일, 아이템, 색상 등을 검색하여 관련 이미지를 확인해보세요.</p>", unsafe_allow_html=True)
+    
+    style_query = st.text_input("", placeholder="검색어를 입력하세요 (예: 미니멀 스타일링, 블루 코트, 캐주얼 룩 등)", key="style_search")
+    
+    if style_query:
+        with st.spinner("스타일링 이미지를 검색 중입니다..."):
+            try:
+                # 스타일 검색 키워드는 get_multiple_images 함수 내에서 처리
+                images = get_multiple_images(style_query)
+                
+                if images:
+                    st.markdown(f"### '{style_query}'")
+                    
+                    # 이미지를 3개씩 2행으로 표시
+                    for i in range(0, len(images), 3):
+                        cols = st.columns(3)
+                        for j in range(3):
+                            if i+j < len(images):
+                                with cols[j]:
+                                    st.image(images[i+j], use_container_width=True)
+                    
+                    st.markdown("""
+                    <div class='footer-tiny' style='text-align: center; margin-top: 20px;'>
+                    이미지 제공: Unsplash
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.error("이미지를 찾을 수 없습니다. 다른 검색어로 시도해 보세요.")
+            except Exception as e:
+                st.error(f"이미지 검색 중 오류 발생: {e}")
+                st.error("잠시 후 다시 시도해 주세요.")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# 푸터 추가 (모든 탭에서 공통으로 표시)
+st.markdown("---")
+st.markdown("""
+<div class="footer-tiny" style="text-align: center; margin-top: 20px;">
+© 2025 FASHION TREND-SETTER. All rights reserved.
+</div>
+""", unsafe_allow_html=True)
 
 # Unsplash API를 통한 이미지 검색 개선
 def get_image_url(query):
@@ -450,323 +849,4 @@ def get_multiple_images(query, count=6):
         # 필요한 수 만큼 기본 이미지 리스트 확장
         while len(default_images) < count:
             default_images += default_images[:count-len(default_images)]
-        return default_images[:count]
-
-# 검색 기능
-if search_option == "Trend & Information":
-    search_query = st.text_input("", placeholder="(예: Y2K 패션, 아방가르드, 하이엔드 등)")
-    
-    # GPT를 통한 트렌드 정보 검색
-    def get_fashion_trend_info(query):
-        try:
-            if not st.session_state.openai_api_key:
-                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
-                return None
-            
-            client = OpenAI(api_key=st.session_state.openai_api_key)
-            
-            # 최대 3번 시도
-            max_attempts = 3
-            for attempt in range(max_attempts):
-                try:
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "system", "content": "당신은 패션 용어와 트렌드에 대한 설명을 제공하는 패션 전문가입니다. 사용자가 입력한 패션 용어나 트렌드에 대해 자세히 설명해주세요."},
-                            {"role": "user", "content": f"다음 패션 용어/트렌드의 의미와 특징을 알려주세요: {query}"}
-                        ],
-                        temperature=0.7,
-                        max_tokens=500
-                    )
-                    
-                    content = response.choices[0].message.content
-                    if content and len(content.strip()) > 0:
-                        return {"description": content.strip()}
-                    else:
-                        if attempt < max_attempts - 1:
-                            time.sleep(1)  # 잠시 대기 후 재시도
-                            continue
-                        else:
-                            st.error("API에서 빈 응답을 받았습니다. 다른 검색어로 시도해 보세요.")
-                            return None
-                except Exception as e:
-                    if attempt < max_attempts - 1:
-                        time.sleep(1)  # 잠시 대기 후 재시도
-                        continue
-                    else:
-                        raise e
-            
-            return None
-        except Exception as e:
-            st.error(f"OpenAI API 호출 중 오류 발생: {e}")
-            return None
-
-    # 패션 용어/브랜드 정보 검색
-    def get_fashion_term_info(query):
-        try:
-            # API 키 확인
-            if not st.session_state.openai_api_key:
-                st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 설정'에서 입력할 수 있습니다.")
-                return None
-            
-            # OpenAI 클라이언트 초기화
-            client = OpenAI(api_key=st.session_state.openai_api_key)
-            
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "당신은 패션 전문가입니다. 패션 용어와 브랜드에 대한 상세한 정보를 제공해주세요. 응답은 반드시 유효한 JSON 형식이어야 합니다."},
-                    {"role": "user", "content": f"다음 패션 용어 또는 브랜드에 대해 알려주세요: {query}. 다음 JSON 형식으로만 응답해주세요(추가 텍스트 없이): {{\"definition\": \"정의\", \"examples\": [\"예시1\", \"예시2\"], \"brands\": [\"브랜드1\", \"브랜드2\"], \"related_terms\": [\"관련용어1\", \"관련용어2\"]}}"}
-                ],
-                response_format={"type": "json_object"}
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            st.error(f"OpenAI API 호출 중 오류 발생: {e}")
-            return None
-
-    # 검색 실행
-    if search_query:
-        if not st.session_state.openai_api_key:
-            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
-        else:
-            with st.spinner("정보를 검색 중입니다..."):
-                try:
-                    # 트렌드/용어 정보 가져오기
-                    trend_info = get_fashion_trend_info(search_query)
-                    if trend_info and "description" in trend_info:
-                        # 설명 표시 ('에 대한 설명' 문구 제거)
-                        st.markdown(f"### '{search_query}'")
-                        st.write(trend_info["description"])
-                        
-                        # 구분선 추가
-                        st.markdown("---")
-                        
-                        # 이미지 표시
-                        st.markdown("### 관련 이미지")
-                        # 이미지 검색 키워드 정제
-                        image_url = get_image_url(search_query)
-                        if image_url:
-                            st.image(image_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
-                    else:
-                        st.error("검색 결과를 가져오지 못했습니다. 다른 검색어로 시도해 보세요.")
-                except Exception as e:
-                    st.error(f"검색 중 오류 발생: {e}")
-                    st.error("잠시 후 다시 시도해 주세요.")
-elif search_option == "Brands":
-    # 패션 브랜드 정보 문구와 드롭다운 대신 검색창 추가
-    search_query = st.text_input("", placeholder="브랜드명을 입력하세요 (예: 구찌, 프라다, 나이키 등)")
-    
-    if search_query:
-        # API 키 확인
-        if not st.session_state.openai_api_key:
-            st.error("OpenAI API 키를 입력해주세요. 사이드바의 'API 키 설정'에서 입력할 수 있습니다.")
-        else:
-            with st.spinner("브랜드 정보를 검색 중입니다..."):
-                try:
-                    # 브랜드 이름 정리
-                    brand_name = search_query
-                    
-                    # 브랜드 정보 가져오기
-                    import json
-                    brand_info_str = get_fashion_term_info(brand_name)
-                    if brand_info_str:
-                        try:
-                            brand_info = json.loads(brand_info_str)
-                            
-                            # 필수 키가 있는지 확인
-                            required_keys = ["definition", "examples", "brands", "related_terms"]
-                            for key in required_keys:
-                                if key not in brand_info:
-                                    st.error(f"API 응답에 필요한 '{key}' 정보가 없습니다. 다시 시도해 주세요.")
-                                    raise KeyError(f"Missing required key: {key}")
-                            
-                            # 이미지 URL 가져오기 - 브랜드 특화 검색어 사용
-                            specific_query = f"{brand_name} brand logo fashion"
-                            image_url = get_image_url(specific_query)
-                            
-                            # 브랜드 정보 표시
-                            col1, col2 = st.columns([1, 1])
-                            
-                            with col1:
-                                st.markdown(f"<div class='card'><h2>{brand_name}</h2>", unsafe_allow_html=True)
-                                st.markdown(f"<p>{brand_info['definition']}</p></div>", unsafe_allow_html=True)
-                                
-                                st.markdown("<div class='card'><h3>대표 제품/스타일</h3>", unsafe_allow_html=True)
-                                for example in brand_info['examples']:
-                                    st.markdown(f"- {example}")
-                                st.markdown("</div>", unsafe_allow_html=True)
-                                
-                                st.markdown("<div class='card'><h3>관련 용어</h3>", unsafe_allow_html=True)
-                                term_html = ""
-                                for term in brand_info['related_terms']:
-                                    term_html += f"<span class='related-keyword'>{term}</span>"
-                                st.markdown(term_html, unsafe_allow_html=True)
-                                st.markdown("</div>", unsafe_allow_html=True)
-                            
-                            with col2:
-                                st.markdown("<div class='card'>", unsafe_allow_html=True)
-                                st.image(image_url, caption=f"{brand_name} 이미지", use_container_width=True)
-                                st.markdown("</div>", unsafe_allow_html=True)
-                        except json.JSONDecodeError as e:
-                            st.error(f"JSON 파싱 오류: {e}")
-                            st.error("API 응답이 올바른 JSON 형식이 아닙니다. 다시 시도해 주세요.")
-                        except KeyError as e:
-                            st.error(f"필수 데이터 누락: {e}")
-                
-                except Exception as e:
-                    st.error(f"오류 발생: {e}")
-                    st.error("브랜드 정보를 처리하는 중 문제가 발생했습니다. 다시 시도해 주세요.")
-else:  # 스타일링 검색
-    st.markdown("<p class='styling-guide'>원하는 패션 스타일, 아이템, 색상 등을 검색하여 관련 이미지를 확인해보세요.</p>", unsafe_allow_html=True)
-    
-    style_query = st.text_input("", placeholder="검색어를 입력하세요 (예: 미니멀 스타일링, 블루 코트, 캐주얼 룩 등)")
-    
-    if style_query:
-        with st.spinner("스타일링 이미지를 검색 중입니다..."):
-            try:
-                # 스타일 검색 키워드는 get_multiple_images 함수 내에서 처리
-                images = get_multiple_images(style_query)
-                
-                if images:
-                    st.markdown(f"### '{style_query}'")
-                    
-                    # 이미지를 3개씩 2행으로 표시
-                    for i in range(0, len(images), 3):
-                        cols = st.columns(3)
-                        for j in range(3):
-                            if i+j < len(images):
-                                with cols[j]:
-                                    st.image(images[i+j], use_container_width=True)
-                    
-                    st.markdown("""
-                    <div class='footer-tiny' style='text-align: center; margin-top: 20px;'>
-                    이미지 제공: Unsplash
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.error("이미지를 찾을 수 없습니다. 다른 검색어로 시도해 보세요.")
-            except Exception as e:
-                st.error(f"이미지 검색 중 오류 발생: {e}")
-                st.error("잠시 후 다시 시도해 주세요.")
-
-# 패션 뉴스 섹션과 푸터 부분 전체 수정
-if search_option == "Trend & Information":
-    # 패션 뉴스 섹션 추가 (Trend & Information 탭에서만 표시)
-    st.markdown("---")
-    st.markdown('<div class="news-section">', unsafe_allow_html=True)
-    
-    # 타이틀과 스크롤 버튼을 나란히 배치
-    col_title, col_buttons = st.columns([4, 1])
-    with col_title:
-        st.markdown('<div class="trend-news-title">TREND NEWS</div>', unsafe_allow_html=True)
-    with col_buttons:
-        cols_btn = st.columns(2)
-        with cols_btn[0]:
-            if st.button("◀", key="prev_btn", help="이전 뉴스 보기"):
-                st.session_state.news_scroll_left = True
-        with cols_btn[1]:
-            if st.button("▶", key="next_btn", help="다음 뉴스 보기"):
-                st.session_state.news_scroll_right = True
-
-    # 패션 뉴스 데이터 (실제 패션 관련 뉴스)
-    fashion_news = [
-        {
-            "category": "트렌드",
-            "title": "2024 S/S 서울패션위크에서 주목받은 스트리트 스타일",
-            "date": "2024.05.14",
-            "author": "김승혜",
-            "image": "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500"
-        },
-        {
-            "category": "브랜드",
-            "title": "메종 마르지엘라, 가을 시즌 새로운 타비 부츠 컬렉션 공개",
-            "date": "2024.05.12",
-            "author": "이성민",
-            "image": "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=500"
-        },
-        {
-            "category": "스타일",
-            "title": "Y2K 패션의 귀환, 2000년대 초 트렌드가 다시 인기",
-            "date": "2024.05.10",
-            "author": "박지현",
-            "image": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500"
-        },
-        {
-            "category": "지속가능성",
-            "title": "친환경 패션 브랜드의 부상, 소비자들의 윤리적 소비 증가",
-            "date": "2024.05.08",
-            "author": "최윤서",
-            "image": "https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500"
-        },
-        {
-            "category": "액세서리",
-            "title": "2024 여름 시즌 주목할 만한 패션 액세서리 트렌드",
-            "date": "2024.05.05",
-            "author": "정민지",
-            "image": "https://images.unsplash.com/photo-1589782182703-2aaa69037b5b?w=500"
-        },
-        {
-            "category": "뷰티",
-            "title": "패션과 메이크업의 조화, 이번 시즌 런웨이에서 주목받은 뷰티 룩",
-            "date": "2024.05.03",
-            "author": "한소연",
-            "image": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500"
-        },
-        {
-            "category": "셀럽",
-            "title": "인플루언서들이 선택한 2024 여름 필수 아이템",
-            "date": "2024.04.30",
-            "author": "김태희",
-            "image": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=500"
-        },
-        {
-            "category": "콜라보",
-            "title": "스트리트 브랜드와 럭셔리 하우스의 놀라운 협업 소식",
-            "date": "2024.04.28",
-            "author": "이준호",
-            "image": "https://images.unsplash.com/photo-1445205170230-053b83016050?w=500"
-        }
-    ]
-
-    # 뉴스 스크롤 인덱스 관리
-    if 'news_start_idx' not in st.session_state:
-        st.session_state.news_start_idx = 0
-    
-    # 버튼 클릭 시 스크롤 처리
-    if 'news_scroll_left' in st.session_state and st.session_state.news_scroll_left:
-        st.session_state.news_start_idx = max(0, st.session_state.news_start_idx - 4)
-        st.session_state.news_scroll_left = False
-    
-    if 'news_scroll_right' in st.session_state and st.session_state.news_scroll_right:
-        st.session_state.news_start_idx = min(len(fashion_news) - 4, st.session_state.news_start_idx + 4)
-        st.session_state.news_scroll_right = False
-    
-    # 현재 보이는 뉴스 슬라이스 생성
-    visible_news = fashion_news[st.session_state.news_start_idx:st.session_state.news_start_idx + 4]
-    
-    # 뉴스 카드 표시 - 컬럼 사용
-    news_cols = st.columns(4)
-    for i, news in enumerate(visible_news):
-        with news_cols[i]:
-            st.markdown(f"""
-            <div class="news-card" style="min-width: 100%; max-width: 100%;">
-                <img src="{news['image']}" class="news-image" alt="{news['title']}">
-                <div class="news-content">
-                    <div class="news-category">{news['category']}</div>
-                    <div class="news-title">{news['title']}</div>
-                    <div class="news-date">{news['date']}</div>
-                    <div class="news-author">by {news['author']}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 푸터 추가 (모든 탭에서 공통으로 표시)
-st.markdown("---")
-st.markdown("""
-<div class="footer-tiny" style="text-align: center; margin-top: 20px;">
-© 2025 FASHION TREND-SETTER. All rights reserved.
-</div>
-""", unsafe_allow_html=True) 
+        return default_images[:count] 
