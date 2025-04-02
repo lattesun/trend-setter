@@ -30,7 +30,7 @@ st.set_page_config(
 if 'openai_api_key' not in st.session_state:
     st.session_state.openai_api_key = os.getenv("OPENAI_API_KEY", "")
 if 'unsplash_api_key' not in st.session_state:
-    st.session_state.unsplash_api_key = os.getenv("UNSPLASH_ACCESS_KEY", "")
+    st.session_state.unsplash_api_key = os.getenv("UNSPLASH_ACCESS_KEY", "q1VeVvIyw9Y0LS56SrB2yLNWXiSPPFiQdtHe5juBBIk")  # 기본 API 키 설정
 
 # CSS 스타일 적용
 st.markdown("""
@@ -651,21 +651,47 @@ else:
                             st.markdown("### 관련 이미지")
                             
                             # 기본 이미지 URL
-                            default_image = "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=600"
+                            default_images = [
+                                "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=600",
+                                "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600",
+                                "https://images.unsplash.com/photo-1445205170230-053b83016050?w=600",
+                                "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?w=600",
+                                "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600"
+                            ]
                             
                             try:
                                 # Unsplash API를 사용하여 이미지 검색
                                 unsplash_access_key = st.session_state.unsplash_api_key
                                 if unsplash_access_key:
                                     # 패션 관련 키워드 추가
-                                    search_keywords = [
-                                        f"{search_query} fashion",
-                                        f"{search_query} style",
-                                        f"{search_query} clothing"
-                                    ]
+                                    image_found = False
+                                    
+                                    # 검색어에 따른 키워드 생성
+                                    if any('\u3131' <= c <= '\u318F' or '\uAC00' <= c <= '\uD7A3' for c in search_query):  # 한글 감지
+                                        search_keywords = [
+                                            f"{search_query} 패션",
+                                            f"{search_query} 스타일",
+                                            f"{search_query} 룩",
+                                            f"{search_query} 코디",
+                                            f"{search_query} fashion"
+                                        ]
+                                    else:
+                                        search_keywords = [
+                                            f"{search_query} fashion",
+                                            f"{search_query} style",
+                                            f"{search_query} look",
+                                            f"{search_query} outfit",
+                                            f"{search_query} trend"
+                                        ]
                                     
                                     # 이미지 검색
+                                    cols = st.columns(3)
+                                    count = 0
+                                    
                                     for keyword in search_keywords:
+                                        if count >= 3:  # 최대 3개 이미지만 표시
+                                            break
+                                            
                                         try:
                                             url = f"https://api.unsplash.com/search/photos?query={keyword}&client_id={unsplash_access_key}&per_page=1"
                                             response = requests.get(url)
@@ -673,19 +699,31 @@ else:
                                             
                                             if 'results' in data and len(data['results']) > 0:
                                                 image_url = data['results'][0]['urls']['regular']
-                                                st.image(image_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
-                                                break
-                                        except:
+                                                with cols[count]:
+                                                    st.image(image_url, caption=f"{keyword}", use_container_width=True)
+                                                count += 1
+                                                image_found = True
+                                        except Exception as e:
+                                            st.error(f"이미지 검색 오류: {e}")
                                             continue
-                                    else:
-                                        # 검색 결과가 없으면 기본 이미지 표시
-                                        st.image(default_image, caption=f"{search_query} 관련 이미지", use_container_width=True)
+                                    
+                                    # 충분한 이미지를 찾지 못했다면 기본 이미지 사용
+                                    if not image_found:
+                                        for i, img_url in enumerate(default_images[:3]):
+                                            with cols[i]:
+                                                st.image(img_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
                                 else:
                                     # API 키가 없으면 기본 이미지 표시
-                                    st.image(default_image, caption=f"{search_query} 관련 이미지", use_container_width=True)
+                                    cols = st.columns(3)
+                                    for i, img_url in enumerate(default_images[:3]):
+                                        with cols[i]:
+                                            st.image(img_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
                             except Exception as e:
                                 # 에러 발생 시 기본 이미지 표시
-                                st.image(default_image, caption=f"{search_query} 관련 이미지", use_container_width=True)
+                                cols = st.columns(3)
+                                for i, img_url in enumerate(default_images[:3]):
+                                    with cols[i]:
+                                        st.image(img_url, caption=f"{search_query} 관련 이미지", use_container_width=True)
                                 st.error(f"이미지 검색 중 오류 발생: {e}")
                         else:
                             st.error("검색 결과를 가져오지 못했습니다. 다른 검색어로 시도해 보세요.")
@@ -747,35 +785,49 @@ else:
                                 
                                 # 이미지 URL 가져오기 - 브랜드 특화 검색어 사용
                                 image_url = None
-                                default_image = "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=600"
+                                default_images = [
+                                    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=600", # 고급 쇼핑몰
+                                    "https://images.unsplash.com/photo-1445205170230-053b83016050?w=600", # 패션 모델
+                                    "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=600", # 브랜드 매장
+                                    "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=600", # 브랜드 쇼케이스
+                                    "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600"  # 브랜드 제품
+                                ]
                                 
                                 try:
                                     # Unsplash API를 사용하여 이미지 검색
                                     unsplash_access_key = st.session_state.unsplash_api_key
                                     if unsplash_access_key:
-                                        # 브랜드 관련 키워드 검색
-                                        specific_query = f"{brand_name} brand logo fashion"
-                                        url = f"https://api.unsplash.com/search/photos?query={specific_query}&client_id={unsplash_access_key}&per_page=1"
-                                        response = requests.get(url)
-                                        data = response.json()
+                                        # 브랜드 관련 검색어 생성
+                                        search_keywords = [
+                                            f"{brand_name} fashion brand",
+                                            f"{brand_name} logo fashion",
+                                            f"{brand_name} store",
+                                            f"{brand_name} products",
+                                            f"{brand_name} fashion show"
+                                        ]
                                         
-                                        if 'results' in data and len(data['results']) > 0:
-                                            image_url = data['results'][0]['urls']['regular']
-                                        else:
-                                            # 다른 검색어 시도
-                                            fallback_query = f"{brand_name} fashion"
-                                            url = f"https://api.unsplash.com/search/photos?query={fallback_query}&client_id={unsplash_access_key}&per_page=1"
-                                            response = requests.get(url)
-                                            data = response.json()
+                                        # 이미지 검색 시도
+                                        for keyword in search_keywords:
+                                            try:
+                                                url = f"https://api.unsplash.com/search/photos?query={keyword}&client_id={unsplash_access_key}&per_page=1"
+                                                response = requests.get(url)
+                                                data = response.json()
+                                                
+                                                if 'results' in data and len(data['results']) > 0:
+                                                    image_url = data['results'][0]['urls']['regular']
+                                                    break
+                                            except Exception:
+                                                continue
                                             
-                                            if 'results' in data and len(data['results']) > 0:
-                                                image_url = data['results'][0]['urls']['regular']
-                                            else:
-                                                image_url = default_image
+                                        # 이미지를 찾지 못했으면 기본 이미지 중 하나 사용
+                                        if not image_url:
+                                            image_url = random.choice(default_images)
                                     else:
-                                        image_url = default_image
+                                        # API 키가 없으면 기본 이미지 중 하나 사용
+                                        image_url = random.choice(default_images)
                                 except Exception as e:
-                                    image_url = default_image
+                                    # 에러 발생 시 기본 이미지 중 하나 사용
+                                    image_url = random.choice(default_images)
                                     st.error(f"이미지 검색 중 오류 발생: {e}")
                                 
                                 # 브랜드 정보 표시
@@ -827,7 +879,13 @@ else:
                         "https://images.unsplash.com/photo-1445205170230-053b83016050",
                         "https://images.unsplash.com/photo-1479064555552-3ef4979f8908",
                         "https://images.unsplash.com/photo-1485968579580-b6d095142e6e",
-                        "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f"
+                        "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f",
+                        "https://images.unsplash.com/photo-1509631179647-0177331693ae",
+                        "https://images.unsplash.com/photo-1566206091558-7f218b696731",
+                        "https://images.unsplash.com/photo-1581044777550-4cfa60707c03",
+                        "https://images.unsplash.com/photo-1604925529478-b7c844b27290",
+                        "https://images.unsplash.com/photo-1607083206968-13611e3d76db",
+                        "https://images.unsplash.com/photo-1589465885857-44edb59bbff2"
                     ]
                     
                     # 이미지 검색
@@ -845,7 +903,10 @@ else:
                                 f"{style_query} 스타일링",
                                 f"{style_query} 코디",
                                 f"{style_query} 패션 코디",
-                                f"{style_query} fashion look"
+                                f"{style_query} fashion look",
+                                f"{style_query} 옷 코디",
+                                f"{style_query} 트렌드",
+                                f"{style_query} 패션 아이템"
                             ]
                         else:
                             # 영문 키워드인 경우
@@ -854,13 +915,19 @@ else:
                                 f"{style_query} style",
                                 f"{style_query} outfit",
                                 f"{style_query} look",
-                                f"{style_query} styling"
+                                f"{style_query} styling",
+                                f"{style_query} clothes",
+                                f"{style_query} trend",
+                                f"{style_query} fashion items"
                             ]
                         
                         # 각 검색어로 이미지 검색
                         for query in search_queries:
+                            if len(images) >= 6:  # 6개 이미지를 찾으면 중단
+                                break
+                                
                             try:
-                                url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}&per_page=3&orientation=portrait"
+                                url = f"https://api.unsplash.com/search/photos?query={query}&client_id={unsplash_access_key}&per_page=2&orientation=portrait"
                                 response = requests.get(url)
                                 data = response.json()
                                 
@@ -869,18 +936,26 @@ else:
                                     for item in data['results']:
                                         if item['urls']['regular'] not in images:
                                             images.append(item['urls']['regular'])
-                            except Exception:
+                                            # 6개 이미지를 찾으면 중단
+                                            if len(images) >= 6:
+                                                break
+                            except Exception as e:
+                                st.error(f"검색 오류 ({query}): {e}")
                                 continue
                     
-                    # 검색 결과가 없으면 기본 이미지 사용
+                    # 검색 결과가 없거나 부족한 경우
                     if not images:
-                        images = default_images
-                    # 최대 6개까지만 표시
-                    images = images[:6]
-                    
-                    # 결과가 부족하면 기본 이미지로 보충
-                    while len(images) < 6:
-                        images += default_images[:6-len(images)]
+                        # 결과가 없으면 기본 이미지 셔플해서 선택
+                        random.shuffle(default_images)
+                        images = default_images[:6]
+                    elif len(images) < 6:
+                        # 결과가 부족하면 부족한 만큼 기본 이미지로 보충 (중복되지 않게)
+                        random.shuffle(default_images)
+                        for img in default_images:
+                            if img not in images:
+                                images.append(img)
+                                if len(images) >= 6:
+                                    break
                     
                     # 결과 표시
                     if images:
