@@ -116,20 +116,42 @@ st.markdown("""
     .news-container {
         display: flex;
         flex-wrap: nowrap;
-        gap: 15px;
-        margin-top: 30px;
+        gap: 20px;
+        margin: 30px 0;
         overflow-x: auto;
-        padding-bottom: 15px;
+        padding: 10px 0 25px 0;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+        width: 100%;
+    }
+    .news-container::-webkit-scrollbar {
+        height: 6px;
+    }
+    .news-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .news-container::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+    .news-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
     .news-card {
+        display: inline-block;
         background-color: white;
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        min-width: 220px;
-        max-width: 220px;
+        min-width: 250px;
+        max-width: 250px;
         flex: 0 0 auto;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin: 5px 0;
     }
     .news-card:hover {
         transform: translateY(-5px);
@@ -642,11 +664,12 @@ fashion_news = [
     }
 ]
 
-# 뉴스 카드 4개 표시
+# 뉴스 카드 4개 표시 - HTML 구조 개선
 st.markdown('<div class="news-container">', unsafe_allow_html=True)
 
+news_html = ""
 for news in fashion_news:
-    st.markdown(f"""
+    news_html += f"""
     <div class="news-card">
         <img src="{news['image']}" class="news-image" alt="{news['title']}">
         <div class="news-content">
@@ -656,8 +679,9 @@ for news in fashion_news:
             <div class="news-author">by {news['author']}</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """
 
+st.markdown(news_html, unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # 푸터 추가
